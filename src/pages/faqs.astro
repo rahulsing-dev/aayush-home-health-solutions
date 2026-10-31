@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import FaqList from '../components/sections/FaqList.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+---
+<BaseLayout title="FAQs" description="Answers to common questions about home nursing services from Aayush Home Health Solutions.">
+  <PageHeader title="Frequently Asked Questions" eyebrow="FAQs" intro="Quick answers about our services, staff and how to reach us." crumbs={[{ label: 'FAQs' }]} />
+  <section class="section"><div class="container container--narrow"><FaqList /></div></section>
+  <CtaBand title="Still have a question?" text="Our team is reachable 24/7 and happy to help." />
+</BaseLayout>

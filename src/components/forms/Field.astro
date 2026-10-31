@@ -1,0 +1,55 @@
+---
+/** One labelled form control with an accessible error slot. Handles input, select, textarea. */
+interface Option { value: string; label?: string; slug?: string; selected?: boolean }
+interface Props {
+  id: string;
+  name: string;
+  label: string;
+  type?: 'text' | 'email' | 'tel' | 'date' | 'select' | 'textarea';
+  required?: boolean;
+  autocomplete?: string;
+  inputmode?: 'text' | 'tel' | 'email' | 'numeric';
+  placeholder?: string;
+  hint?: string;
+  options?: Option[];
+  rows?: number;
+  maxlength?: number;
+  full?: boolean;
+}
+const { id, name, label, type = 'text', required = false, autocomplete, inputmode, placeholder, hint, options = [], rows = 4, maxlength, full = false } = Astro.props;
+const describedBy = [hint ? `${id}-hint` : '', `${id}-error`].filter(Boolean).join(' ');
+---
+<div class:list={['field', full && 'field--full']} data-field={name}>
+  <label for={id}>{label}{required ? <span class="req" aria-hidden="true"> *</span> : <span class="opt"> (optional)</span>}</label>
+  {type === 'select' ? (
+    <select {id} {name} required={required} aria-describedby={describedBy}>
+      <option value="">Select…</option>
+      {options.map((o) => <option value={o.value} data-slug={o.slug} selected={o.selected}>{o.label ?? o.value}</option>)}
+    </select>
+  ) : type === 'textarea' ? (
+    <textarea {id} {name} {rows} {maxlength} {placeholder} aria-describedby={describedBy}></textarea>
+  ) : (
+    <input {id} {name} {type} {autocomplete} {inputmode} {placeholder} {maxlength} required={required} aria-describedby={describedBy} />
+  )}
+  {hint && <p class="hint" id={`${id}-hint`}>{hint}</p>}
+  <p class="error" id={`${id}-error`} data-error></p>
+</div>
+
+<style>
+  .field { display: grid; gap: 0.4rem; align-content: start; min-width: 0; }
+  .field--full { grid-column: 1 / -1; }
+  label { font-weight: 600; font-size: 0.9375rem; color: var(--c-ink); }
+  .req { color: var(--c-danger); }
+  .opt { font-weight: 450; color: var(--c-muted); font-size: 0.875rem; }
+  input, select, textarea { width: 100%; min-height: 3rem; padding: 0.7rem 0.9rem; background: #fff; border: 1.5px solid #b9c8d5; border-radius: var(--radius-sm); color: var(--c-ink); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  textarea { resize: vertical; min-height: 7rem; line-height: 1.5; }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2355687a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.85rem center; padding-right: 2.5rem; }
+  input::placeholder, textarea::placeholder { color: #7a8c9c; }
+  input:hover, select:hover, textarea:hover { border-color: #8aa2b5; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px rgb(11 95 165 / 0.25); }
+  [aria-invalid='true'] { border-color: var(--c-danger); background: #fffafa; }
+  [aria-invalid='true']:focus { box-shadow: 0 0 0 3px rgb(180 35 24 / 0.2); }
+  .hint { font-size: 0.8125rem; color: var(--c-muted); }
+  .error { font-size: 0.875rem; font-weight: 550; color: var(--c-danger); min-height: 0; }
+  .error:empty { display: none; }
+</style>

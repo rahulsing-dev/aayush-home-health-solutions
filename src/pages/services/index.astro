@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import ServiceCards from '../../components/sections/ServiceCards.astro';
+import FeatureBand from '../../components/sections/FeatureBand.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+---
+<BaseLayout title="Home Nursing Services" description="Home nursing services from Aayush Home Health Solutions, Bangalore: trained, trustworthy nursing staff caring for elderly persons and patients at home.">
+  <PageHeader title="Home Nursing Services" eyebrow="What we do" intro="Skilled and trustworthy staff, compassionate caring, and one point solution for those in need." crumbs={[{ label: 'Services' }]} />
+  <section class="section"><div class="container"><h2 class="sr-only">Our home nursing service</h2><ServiceCards /></div></section>
+  <FeatureBand />
+  <CtaBand title="Not sure what care is needed?" text="Talk to us. We can help you understand the options." />
+</BaseLayout>

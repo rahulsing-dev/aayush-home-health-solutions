@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import Media from '../../components/ui/Media.astro';
+import Icon from '../../components/ui/Icon.astro';
+import SectionHead from '../../components/ui/SectionHead.astro';
+import Process from '../../components/sections/Process.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import { services } from '../../content/services';
+import { contact, telHref } from '../../config/site';
+
+export function getStaticPaths() {
+  return services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
+}
+const { service } = Astro.props;
+const others = services.filter((s) => s.slug !== service.slug);
+const phone = contact.phones[0];
+---
+<BaseLayout title={service.title} description={service.summary}>
+  <PageHeader title={service.title} eyebrow="Home nursing" intro={service.summary} crumbs={[{ label: 'Services', href: '/services' }, { label: service.title }]} />
+
+  <section class="section">
+    <div class="container detail">
+      <div class="detail__main">
+        <div class="prose">
+          {service.description.map((p, i) => <p class:list={[i === 0 && 'lead']}>{p}</p>)}
+        </div>
+        <h2 class="detail__h">What to expect</h2>
+        <ul role="list" class="ticks">
+          {service.highlights.map((h) => (
+            <li><span class="ticks__icon"><Icon name="check" size={16} /></span><span>{h}</span></li>
+          ))}
+        </ul>
+      </div>
+      <aside class="detail__aside" aria-label={`Enquire about ${service.title}`}>
+        <Media image={service.image} eager />
+        <div class="enq">
+          <h2>Enquire about {service.title}</h2>
+          <p>Tell us about your situation and we will help you with the next step.</p>
+          <a class="btn btn--primary" href={`/contact?service=${service.slug}`}>Make an Enquiry</a>
+          <a class="btn btn--outline" href={telHref(phone.tel)}><Icon name="phone" size={18} /> {phone.display}</a>
+          <p class="enq__note"><Icon name="clock" size={16} /> {contact.availability}</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section section--soft"><div class="container"><Process /></div></section>
+
+  {others.length > 0 && (
+    <section class="section" aria-labelledby="other-h">
+      <div class="container">
+        <SectionHead id="other-h" title="Our other services" />
+        <ul role="list" class="others">
+          {others.map((o) => (
+            <li>
+              <a href={`/services/${o.slug}`} class="other">
+                <span class="other__icon"><Icon name={o.icon} size={24} /></span>
+                <span class="other__text"><strong>{o.title}</strong><span>{o.summary}</span></span>
+                <Icon name="arrow-right" size={20} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <CtaBand title={`Ready to talk about ${service.title}?`} text="We are reachable 24/7 by phone and email." />
+</BaseLayout>
+
+<style>
+  .detail { display: grid; gap: 2.5rem; align-items: start; }
+  .detail__main { display: grid; gap: 1.75rem; }
+  .detail__h { font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem); margin-top: 0.5rem; }
+  .ticks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; max-width: 42rem; }
+  .ticks li { display: flex; gap: 0.85rem; align-items: flex-start; padding: 1rem 1.15rem; background: var(--c-bg-soft); border-radius: var(--radius-md); }
+  .ticks__icon { flex: none; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--c-secondary); color: #fff; margin-top: 0.1rem; }
+  .detail__aside { display: grid; gap: 1.25rem; }
+  .enq { display: grid; gap: 0.85rem; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+  .enq h2 { font-size: 1.375rem; }
+  .enq p { color: var(--c-muted); }
+  .enq__note { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+  @media (min-width: 960px) { .detail { grid-template-columns: 1.25fr 0.75fr; gap: 4rem; } .detail__aside { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
+  .others { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .other { display: flex; align-items: center; gap: 1.25rem; padding: 1.35rem 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); text-decoration: none; color: var(--c-primary); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .other:hover { border-color: var(--c-primary-tint); box-shadow: var(--shadow-md); }
+  .other__icon { flex: none; display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: var(--radius-md); background: var(--c-primary-soft); }
+  .other__text { display: grid; gap: 0.2rem; flex: 1; color: var(--c-muted); }
+  .other__text strong { color: var(--c-ink); font-size: 1.125rem; }
+</style>

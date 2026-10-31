@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import Icon from '../components/ui/Icon.astro';
+import { career } from '../content/pages';
+import { contact } from '../config/site';
+import type { IconName } from '../lib/types';
+
+const perks: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'award', title: 'Best in class training', text: 'We invest in training so you can give the best possible care.' },
+  { icon: 'briefcase', title: 'Competitive remuneration', text: 'Fair and competitive pay for the important work you do.' },
+  { icon: 'heart', title: 'Professional service environment', text: 'Join a team that values compassion, duty and commitment.' },
+];
+const subject = encodeURIComponent('Career enquiry');
+---
+<BaseLayout title="Career" description="Join the Aayush Home Health Solutions team. Best in class training, competitive remuneration and a professional service environment.">
+  <PageHeader title="Career" eyebrow="Join our team" intro={career.intro} crumbs={[{ label: 'Career' }]} />
+
+  <section class="section" aria-labelledby="perks-h">
+    <div class="container">
+      <SectionHead center id="perks-h" title="What we offer" />
+      <ul role="list" class="perks">
+        {perks.map((p) => (
+          <li class="reveal"><span class="perks__icon"><Icon name={p.icon} size={26} /></span><h3>{p.title}</h3><p>{p.text}</p></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--soft" id="openings" aria-labelledby="open-h">
+    <div class="container container--narrow">
+      <SectionHead center id="open-h" title="Current openings" />
+      {career.openings.length > 0 ? (
+        <ul role="list" class="jobs">
+          {career.openings.map((j) => (
+            <li class="job">
+              <div><h3>{j.title}</h3><p class="job__meta">{j.location} · {j.type}</p><p>{j.summary}</p></div>
+              <a class="btn btn--outline btn--sm" href={`mailto:${contact.email}?subject=${encodeURIComponent('Application: ' + j.title)}`}>Apply by email</a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div class="empty">
+          <Icon name="briefcase" size={32} />
+          <h3>No openings are listed right now</h3>
+          <p>Specific roles will appear here when they are posted. If you would like to be considered for future openings, send us a short introduction and your contact details.</p>
+          <a class="btn btn--primary" href={`mailto:${contact.email}?subject=${subject}`}><Icon name="mail" size={18} /> Email {contact.email}</a>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .perks { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; }
+  @media (min-width: 760px) { .perks { grid-template-columns: repeat(3, 1fr); } }
+  .perks li { display: grid; gap: 0.75rem; align-content: start; padding: 1.75rem 1.5rem; border: 1px solid var(--c-line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
+  .perks__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary); }
+  .perks p { color: var(--c-muted); }
+  .empty { display: grid; gap: 0.85rem; justify-items: center; text-align: center; padding: 2.5rem 1.5rem; background: #fff; border: 1.5px dashed #b9c8d5; border-radius: var(--radius-lg); }
+  .empty :global(svg) { color: var(--c-primary); }
+  .empty p { color: var(--c-muted); max-width: 34rem; }
+  .jobs { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+  .job { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); }
+  .job__meta { color: var(--c-muted); font-size: 0.9375rem; }
+</style>

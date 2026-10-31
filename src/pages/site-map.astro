@@ -1,0 +1,36 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import { services } from '../content/services';
+import { footerLegal } from '../config/navigation';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const groups = [
+  { title: 'Main', links: [{ label: 'Home', href: '/' }, { label: 'About Us', href: '/about' }, { label: 'Why Aayush', href: '/why-aayush' }, { label: 'Testimonials', href: '/testimonials' }, { label: 'Career', href: '/career' }, { label: 'FAQs', href: '/faqs' }, { label: 'Contact Us', href: '/contact' }] },
+  { title: 'Services', links: [{ label: 'All services', href: '/services' }, ...services.map((s) => ({ label: s.title, href: `/services/${s.slug}` }))] },
+  { title: 'Blog', links: [{ label: 'All posts', href: '/blog' }, ...posts.map((p) => ({ label: p.data.title, href: `/blog/${p.id}` }))] },
+  { title: 'Legal', links: footerLegal.filter((l) => l.href !== '/site-map') },
+];
+---
+<BaseLayout title="Site Map" description="A list of every page on the Aayush Home Health Solutions website.">
+  <PageHeader title="Site Map" crumbs={[{ label: 'Site Map' }]} />
+  <section class="section">
+    <div class="container map">
+      {groups.map((g) => (
+        <div>
+          <h2>{g.title}</h2>
+          <ul role="list">{g.links.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+        </div>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .map { display: grid; gap: 2.5rem 2rem; }
+  @media (min-width: 640px) { .map { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 960px) { .map { grid-template-columns: repeat(4, 1fr); } }
+  h2 { font-size: 1.375rem; margin-bottom: 1rem; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+</style>

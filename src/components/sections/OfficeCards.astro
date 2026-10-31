@@ -1,0 +1,37 @@
+---
+import Icon from '../ui/Icon.astro';
+import { offices, telHref } from '../../config/site';
+---
+<ul role="list" class:list={['offices', offices.length === 1 && 'offices--single']}>
+  {offices.map((o) => (
+    <li>
+      <address class="office">
+        <span class="office__icon"><Icon name="map-pin" size={22} /></span>
+        <h3>{o.name}</h3>
+        <p>{o.addressLines.map((l) => <span>{l}</span>)}</p>
+        {o.contacts.length > 0 && (
+          <ul role="list" class="office__people">
+            {o.contacts.map((c) => (
+              <li>{c.name && <span>{c.name}</span>}<span class="office__nums">{c.phones.map((ph) => <a href={telHref(ph)}>{ph}</a>)}</span></li>
+            ))}
+          </ul>
+        )}
+      </address>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .offices { display: grid; gap: 1.25rem; list-style: none; padding: 0; margin: 0; }
+  @media (min-width: 720px) { .offices:not(.offices--single) { grid-template-columns: repeat(3, 1fr); } }
+  .offices--single { max-width: 34rem; }
+  .office { height: 100%; display: grid; gap: 0.6rem; align-content: start; font-style: normal; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); }
+  .office__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary); }
+  .office h3 { font-family: var(--font-body); font-size: 1.0625rem; font-weight: 650; letter-spacing: 0; }
+  .office p span { display: block; color: var(--c-muted); }
+  .office__people { list-style: none; margin: 0.4rem 0 0; padding: 0.75rem 0 0; border-top: 1px solid var(--c-line); display: grid; gap: 0.4rem; }
+  .office__people li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; font-size: 0.9375rem; }
+  .office__people > li > span:first-child { color: var(--c-ink); font-weight: 550; }
+  .office__nums { display: grid; text-align: right; }
+  .office a { white-space: nowrap; }
+</style>

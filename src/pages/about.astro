@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import Media from '../components/ui/Media.astro';
+import Icon from '../components/ui/Icon.astro';
+import OfficeCards from '../components/sections/OfficeCards.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+import { about } from '../content/pages';
+import { offices, site } from '../config/site';
+---
+<BaseLayout title="About Us" description="Aayush Home Health Solutions is a Bangalore based home health service agency founded by Santosh Kumar Singh in February 2020.">
+  <PageHeader title="About Us" eyebrow="Who we are" intro={about.story[0]} crumbs={[{ label: 'About Us' }]} />
+
+  <section class="section" aria-labelledby="story-h">
+    <div class="container story">
+      <div class="story__copy prose">
+        <h2 id="story-h">Our story</h2>
+        <p>{about.story[1]}</p>
+        <p>{about.story[2]}</p>
+      </div>
+      <dl class="facts">
+        <div><dt>Founded</dt><dd>{site.foundedLabel}</dd></div>
+        <div><dt>Headquarters</dt><dd>Bangalore</dd></div>
+        <div><dt>Availability</dt><dd>Reachable 24/7</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="values-h">
+    <div class="container">
+      <SectionHead center id="values-h" eyebrow="What guides us" title="The Aayush ethos" />
+      <ul role="list" class="values">
+        {about.principles.map((p) => (
+          <li class="reveal"><span class="values__icon"><Icon name={p.icon} size={26} /></span><h3>{p.title}</h3><p>{p.text}</p></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="founder-h">
+    <div class="container founder">
+      <div class="founder__media reveal"><Media image={about.founder.image} /></div>
+      <div class="founder__copy reveal" style="--reveal-delay:100ms">
+        <p class="eyebrow">Meet the founder</p>
+        <h2 id="founder-h">{about.founder.name}</h2>
+        <p class="founder__role">{about.founder.role}</p>
+        {about.founder.bio.map((p) => <p>{p}</p>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="off-h">
+    <div class="container">
+      <SectionHead id="off-h" eyebrow="Where to find us" title={offices.length > 1 ? 'Our offices' : 'Our office'} />
+      <OfficeCards />
+    </div>
+  </section>
+
+  <CtaBand title="Let's talk about the care you need" text="Our team is reachable 24/7." />
+</BaseLayout>
+
+<style>
+  .story { display: grid; gap: 2.5rem; align-items: start; }
+  .story__copy h2 { margin-bottom: 0.25rem; }
+  .facts { display: grid; gap: 0; margin: 0; background: var(--c-bg-soft); border-radius: var(--radius-lg); padding: 0.5rem 1.5rem; }
+  .facts > div { display: grid; gap: 0.15rem; padding: 1.1rem 0; }
+  .facts > div + div { border-top: 1px solid var(--c-line); }
+  .facts dt { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-muted); font-weight: 600; }
+  .facts dd { margin: 0; font-weight: 650; color: var(--c-ink); font-size: 1.0625rem; }
+  @media (min-width: 900px) { .story { grid-template-columns: 1.3fr 0.7fr; gap: 4rem; } }
+  .values { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; }
+  .values li { display: grid; gap: 0.75rem; align-content: start; padding: 1.75rem 1.5rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--c-line); }
+  .values__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--c-secondary-soft); color: var(--c-secondary); }
+  .values p { color: var(--c-muted); }
+  @media (min-width: 760px) { .values { grid-template-columns: repeat(3, 1fr); } }
+  .founder { display: grid; gap: 2.25rem; align-items: center; }
+  .founder__media { max-width: 24rem; }
+  .founder__copy { display: grid; gap: 1rem; max-width: 44rem; }
+  .founder__role { font-weight: 650; color: var(--c-primary); margin-top: -0.5rem; }
+  @media (min-width: 900px) { .founder { grid-template-columns: 0.7fr 1.3fr; gap: 4.5rem; } .founder__media { max-width: none; } }
+</style>

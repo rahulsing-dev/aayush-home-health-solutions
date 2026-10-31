@@ -1,0 +1,37 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import DraftBadge from '../../components/ui/DraftBadge.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Icon from '../../components/ui/Icon.astro';
+import { formatDate, toISODate } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+<BaseLayout title={post.data.title} description={post.data.description} type="article" publishedTime={post.data.date.toISOString()}>
+  <PageHeader title={post.data.title} crumbs={[{ label: 'Blog', href: '/blog' }, { label: post.data.title }]}>
+    <p class="meta">
+      <time datetime={toISODate(post.data.date)}>{formatDate(post.data.date)}</time> · by {post.data.author}
+    </p>
+  </PageHeader>
+  <article class="section">
+    <div class="container container--narrow">
+      <div class="prose"><Content /></div>
+      <p class="back"><a class="link-arrow" href="/blog"><Icon name="arrow-right" size={18} class="flip" /> Back to all posts</a></p>
+    </div>
+  </article>
+  <CtaBand title="Looking for care at home?" text="Speak to our team. We are reachable 24/7." />
+</BaseLayout>
+
+<style>
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; color: var(--c-muted); }
+  .back { margin-top: 3rem; }
+  .back :global(.flip) { transform: scaleX(-1); }
+  .back .link-arrow:hover :global(.flip) { transform: scaleX(-1) translateX(4px); }
+</style>

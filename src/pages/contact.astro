@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import ContactForms from '../components/forms/ContactForms.astro';
+import OfficeCards from '../components/sections/OfficeCards.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import Icon from '../components/ui/Icon.astro';
+import { contact, forms, offices, telHref } from '../config/site';
+---
+<BaseLayout title="Contact Us" description="Make an enquiry or book a home nursing service with Aayush Home Health Solutions. We are reachable 24/7.">
+  <PageHeader title="Contact Us" eyebrow="We're here to help" intro="Make an enquiry or book a service. For anything urgent, please call us directly." crumbs={[{ label: 'Contact Us' }]} />
+
+  <section class="section">
+    <div class="container layout">
+      <ContactForms />
+      <aside class="direct" aria-labelledby="direct-h">
+        <h2 id="direct-h">Prefer to talk?</h2>
+        <p>{contact.availability}.</p>
+        <ul role="list">
+          {contact.phones.map((p, i) => (
+            <li><span class="direct__icon"><Icon name="phone" size={20} /></span><span><span class="direct__label">{i === 0 ? 'Call us' : 'Or call'}</span><a href={telHref(p.tel)}>{p.display}</a></span></li>
+          ))}
+          <li><span class="direct__icon"><Icon name="mail" size={20} /></span><span><span class="direct__label">Email us</span><a href={`mailto:${contact.email}`}>{contact.email}</a></span></li>
+        </ul>
+        {!forms.endpoint && (
+          <p class="direct__demo" data-draft-flag><Icon name="info" size={18} /> <span><strong>Setup note:</strong> the online forms are running in demo mode until a delivery endpoint is configured. Please use phone or email for now.</span></p>
+        )}
+      </aside>
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="offices-h">
+    <div class="container">
+      <SectionHead id="offices-h" eyebrow="Visit us" title={offices.length > 1 ? 'Our offices' : 'Our office'} />
+      <OfficeCards />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .layout { display: grid; gap: 2rem; align-items: start; }
+  @media (min-width: 1000px) { .layout { grid-template-columns: 1fr 22.5rem; gap: 2.5rem; } .direct { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
+  .direct { display: grid; gap: 1rem; padding: 1.75rem 1.5rem; background: var(--c-primary-soft); border-radius: var(--radius-lg); }
+  .direct h2 { font-size: 1.5rem; }
+  .direct ul { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 1.1rem; }
+  .direct li { display: flex; gap: 0.85rem; align-items: center; }
+  .direct li > span:last-child { display: grid; line-height: 1.35; min-width: 0; }
+  .direct a { font-weight: 650; font-size: 0.9375rem; overflow-wrap: anywhere; }
+  .direct__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: #fff; color: var(--c-primary); }
+  .direct__label { font-size: 0.8125rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .direct__demo { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.9rem 1rem; background: var(--c-draft-soft); border: 1px solid #f0d58a; border-radius: var(--radius-sm); color: #5c3d00; font-size: 0.875rem; }
+  .direct__demo :global(svg) { flex: none; margin-top: 0.15rem; }
+</style>

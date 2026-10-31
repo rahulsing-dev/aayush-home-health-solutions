@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import BlogCards from '../../components/sections/BlogCards.astro';
+---
+<BaseLayout title="Blog" description="Articles on home nursing, elder care and in-home health care from Aayush Home Health Solutions.">
+  <PageHeader title="Blog" eyebrow="Insights" intro="Thoughts on caring for ageing parents and loved ones at home." crumbs={[{ label: 'Blog' }]} />
+  <section class="section"><div class="container"><h2 class="sr-only">All posts</h2><BlogCards /></div></section>
+</BaseLayout>

@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import Icon from '../ui/Icon.astro';
+import DraftBadge from '../ui/DraftBadge.astro';
+import { formatDate, toISODate } from '../../lib/format';
+import { site } from '../../config/site';
+interface Props { limit?: number }
+const { limit } = Astro.props;
+let posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+if (limit) posts = posts.slice(0, limit);
+---
+{posts.length === 0 ? (
+  <p class="empty">No posts have been published yet. Please check back soon.</p>
+) : (
+  <ul role="list" class="posts">
+    {posts.map((p, i) => (
+      <li class="post reveal" style={`--reveal-delay:${i * 90}ms`}>
+        <div class="post__meta">
+          <time class="post__date" datetime={toISODate(p.data.date)}>{formatDate(p.data.date)}</time>
+        </div>
+        <h3><a href={`/blog/${p.id}`} class="post__link">{p.data.title}</a></h3>
+        <p>{p.data.description}</p>
+        <div class="post__foot">
+          <span class="post__by">by {p.data.author ?? site.name}</span>
+          <span class="link-arrow" aria-hidden="true">Read <Icon name="arrow-right" size={16} /></span>
+        </div>
+      </li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .posts { display: grid; gap: 1.5rem; list-style: none; padding: 0; margin: 0; }
+  @media (min-width: 760px) { .posts { grid-template-columns: repeat(2, 1fr); } }
+  .post { position: relative; display: grid; gap: 0.9rem; align-content: start; padding: 1.75rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .post:hover, .post:focus-within { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .post__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+  .post__date { display: inline-block; background: var(--c-primary); color: #fff; font-size: 0.8125rem; font-weight: 650; padding: 0.25rem 0.7rem; border-radius: 0.4rem; }
+  .post h3 { font-size: 1.3125rem; }
+  .post__link { color: var(--c-ink); text-decoration: none; }
+  .post__link::after { content: ''; position: absolute; inset: 0; }
+  .post p { color: var(--c-muted); }
+  .post__foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--c-line); font-size: 0.875rem; color: var(--c-muted); }
+  .post .link-arrow { color: var(--c-primary); }
+  .empty { padding: 2rem; text-align: center; background: var(--c-bg-soft); border-radius: var(--radius-md); color: var(--c-muted); }
+</style>

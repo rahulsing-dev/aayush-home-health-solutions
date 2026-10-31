@@ -1,0 +1,28 @@
+---
+import Icon from '../ui/Icon.astro';
+import { trustFacts } from '../../content/pages';
+---
+<section class="trust" aria-label="At a glance">
+  <div class="container">
+    <ul role="list" class="trust__list">
+      {trustFacts.map((f) => (
+        <li>
+          <span class="trust__icon"><Icon name={f.icon} size={22} /></span>
+          <span class="trust__text"><span class="trust__label">{f.label}</span><strong>{f.value}</strong></span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .trust { border-bottom: 1px solid var(--c-line); background: #fff; padding-top: 1.5rem; }
+  .trust__list { display: grid; gap: 1.25rem 1.5rem; padding-block: 1.75rem; grid-template-columns: 1fr; }
+  .trust__list li { display: flex; align-items: center; gap: 0.9rem; }
+  .trust__icon { flex: none; display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary); }
+  .trust__text { display: grid; line-height: 1.35; }
+  .trust__label { font-size: 0.8125rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .trust__text strong { color: var(--c-ink); font-weight: 650; }
+  @media (min-width: 560px) { .trust__list { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .trust__list { grid-template-columns: repeat(4, 1fr); } }
+</style>

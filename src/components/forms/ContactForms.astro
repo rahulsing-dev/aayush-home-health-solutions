@@ -1,0 +1,234 @@
+---
+/**
+ * "Make an Enquiry" + "Book a Service" tabbed forms.
+ * Delivery is configured in src/config/site.ts (forms.endpoint). With no endpoint the forms
+ * run in DEMO MODE and tell the visitor that nothing was sent.
+ */
+import Field from './Field.astro';
+import Icon from '../ui/Icon.astro';
+import { contact, enquiryPackages, forms, telHref } from '../../config/site';
+import { services } from '../../content/services';
+
+const serviceOptions = services.map((s) => ({ value: s.title, slug: s.slug, selected: services.length === 1 }));
+const packageOptions = enquiryPackages.map((p) => ({ value: p }));
+const phone = contact.phones[0];
+
+const tabs = [
+  { id: 'enquiry', label: 'Make an Enquiry', icon: 'phone' as const, submit: 'Send enquiry', blurb: 'Tell us what you are looking for and we will get back to you.' },
+  { id: 'booking', label: 'Book a Service', icon: 'calendar' as const, submit: 'Request booking', blurb: 'Choose a service and your preferred start date. We will confirm the details with you.' },
+];
+---
+<div class="cf" data-contact-forms
+  data-endpoint={forms.endpoint}
+  data-access-key={forms.accessKey}
+  data-services={JSON.stringify(serviceOptions.map((s) => s.value))}
+  data-packages={JSON.stringify(enquiryPackages)}
+  data-phone={phone.display}
+  data-phone-tel={telHref(phone.tel)}
+  data-email={contact.email}>
+
+  <div class="cf__tabs" role="tablist" aria-label="Contact options">
+    {tabs.map((t, i) => (
+      <button type="button" role="tab" class="cf__tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab={t.id}>
+        <Icon name={t.icon} size={20} /> {t.label}
+      </button>
+    ))}
+  </div>
+
+  {tabs.map((t, i) => (
+    <section class="cf__panel" role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} data-panel={t.id} hidden={i !== 0 ? true : undefined}>
+      <h2 class="cf__title">{t.label}</h2>
+      <p class="cf__blurb">{t.blurb}</p>
+      <form class="form" data-form data-kind={t.id} novalidate>
+        <div class="form__grid">
+          <Field id={`${t.id}-name`} name="fullName" label="Full name" required autocomplete="name" />
+          <Field id={`${t.id}-email`} name="email" label="Email" type="email" required autocomplete="email" inputmode="email" />
+          <Field id={`${t.id}-phone`} name="phone" label="Phone number" type="tel" required autocomplete="tel" inputmode="tel" hint="We may call you back on this number." />
+          <Field id={`${t.id}-city`} name="city" label="City" required autocomplete="address-level2" />
+          <Field id={`${t.id}-service`} name="service" label="Service required" type="select" required options={serviceOptions} />
+          <Field id={`${t.id}-date`} name="date" label={t.id === 'booking' ? 'Preferred start date' : 'Preferred date'} type="date" required={t.id === 'booking'} />
+          {packageOptions.length > 0 && <Field id={`${t.id}-package`} name="package" label="Package" type="select" options={packageOptions} />}
+          <Field id={`${t.id}-message`} name="message" label={t.id === 'booking' ? 'Care needs and notes' : 'Description'} type="textarea" full maxlength={1000}
+            hint="Please don't include detailed medical records or sensitive health information here. We'll discuss those with you directly." />
+        </div>
+        <div class="hp" aria-hidden="true">
+          <label for={`${t.id}-website`}>Leave this field empty</label>
+          <input id={`${t.id}-website`} name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <div class="form__status" data-status role="status" aria-live="polite"></div>
+        <div class="form__actions">
+          <button class="btn btn--primary" type="submit" data-submit data-label={t.submit}>{t.submit}</button>
+          <p class="form__note">Fields marked * are required.</p>
+        </div>
+      </form>
+    </section>
+  ))}
+
+  <noscript>
+    <p class="cf__noscript">JavaScript is needed to submit this form. Please call <a href={telHref(phone.tel)}>{phone.display}</a> or email <a href={`mailto:${contact.email}`}>{contact.email}</a>.</p>
+  </noscript>
+</div>
+
+<style>
+  .cf { background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+  .cf__tabs { display: none; background: var(--c-bg-soft); border-bottom: 1px solid var(--c-line); }
+  :global(.js) .cf__tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .cf__tab { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.75rem; padding: 0.75rem 1rem; border: 0; border-bottom: 3px solid transparent; background: transparent; font-weight: 650; color: var(--c-muted); cursor: pointer; transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .cf__tab:hover { color: var(--c-primary); background: var(--c-primary-soft); }
+  .cf__tab[aria-selected='true'] { color: var(--c-primary-strong); background: #fff; border-bottom-color: var(--c-primary); }
+  .cf__tab:focus-visible { outline-offset: -4px; }
+  .cf__panel { padding: clamp(1.25rem, 1rem + 2vw, 2.5rem); }
+  :global(.js) .cf__panel[hidden] { display: none; }
+  .cf__panel + .cf__panel { border-top: 1px solid var(--c-line); }
+  :global(.js) .cf__panel + .cf__panel { border-top: 0; }
+  .cf__title { font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem); }
+  .cf__blurb { color: var(--c-muted); margin-top: 0.4rem; }
+  .form { margin-top: 1.5rem; display: grid; gap: 1.25rem; }
+  .form__grid { display: grid; gap: 1.1rem 1.25rem; }
+  @media (min-width: 640px) { .form__grid { grid-template-columns: 1fr 1fr; } }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; }
+  .form__note { font-size: 0.875rem; color: var(--c-muted); }
+  .form__status:empty { display: none; }
+  .form__status { padding: 1rem 1.15rem; border-radius: var(--radius-sm); border: 1px solid; font-weight: 500; }
+  .form__status[data-state='success'] { background: var(--c-success-soft); border-color: #9bd2b2; color: #0b4a2a; }
+  .form__status[data-state='error'] { background: var(--c-danger-soft); border-color: #f1b0aa; color: #7a1a12; }
+  .form__status[data-state='demo'] { background: var(--c-draft-soft); border-color: #f0d58a; color: #5c3d00; }
+  .form__status a { color: inherit; font-weight: 650; }
+  .cf__noscript { padding: 1rem 1.5rem; background: var(--c-draft-soft); color: #5c3d00; }
+</style>
+
+<script>
+  import { isSpam, todayISO, validateForm, type FormKind, type FormValues } from '../../lib/validation';
+  import { submitForm } from '../../lib/submit';
+
+  const root = document.querySelector<HTMLElement>('[data-contact-forms]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const cfg = {
+      endpoint: root.dataset.endpoint ?? '',
+      accessKey: root.dataset.accessKey ?? '',
+      services: JSON.parse(root.dataset.services ?? '[]') as string[],
+      packages: JSON.parse(root.dataset.packages ?? '[]') as string[],
+      phone: root.dataset.phone ?? '',
+      phoneTel: root.dataset.phoneTel ?? '',
+      email: root.dataset.email ?? '',
+    };
+
+    /* ---------- Tabs (WAI-ARIA tabs pattern with arrow-key support) ---------- */
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    const select = (id: string, focus = false) => {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === id;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && focus) t.focus();
+      });
+      panels.forEach((p) => (p.hidden = p.dataset.panel !== id));
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t.dataset.tab!));
+      t.addEventListener('keydown', (e) => {
+        const k = e.key;
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(k)) return;
+        e.preventDefault();
+        const next = k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : (i + (k === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        select(tabs[next].dataset.tab!, true);
+      });
+    });
+    const fromHash = () => { if (location.hash === '#book-a-service') select('booking'); else if (location.hash === '#make-an-enquiry') select('enquiry'); };
+    fromHash();
+    window.addEventListener('hashchange', fromHash);
+
+    /* ---------- Forms ---------- */
+    const today = todayISO();
+    const params = new URLSearchParams(location.search);
+    const preService = params.get('service');
+
+    root.querySelectorAll<HTMLFormElement>('form[data-form]').forEach((form) => {
+      const kind = form.dataset.kind as FormKind;
+      const status = form.querySelector<HTMLElement>('[data-status]')!;
+      const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+      const dateInput = form.querySelector<HTMLInputElement>('input[type="date"]');
+      if (dateInput) dateInput.min = today;
+
+      if (preService) {
+        const opt = form.querySelector<HTMLOptionElement>(`option[data-slug="${CSS.escape(preService)}"]`);
+        if (opt) (opt.parentElement as HTMLSelectElement).value = opt.value;
+      }
+
+      const read = (): FormValues => {
+        const fd = new FormData(form);
+        const g = (k: string) => String(fd.get(k) ?? '');
+        return { fullName: g('fullName'), email: g('email'), phone: g('phone'), city: g('city'), service: g('service'), date: g('date'), package: g('package'), message: g('message'), website: g('website') };
+      };
+      const run = () => validateForm(read(), { kind, allowedServices: cfg.services, allowedPackages: cfg.packages, today });
+
+      const showError = (name: string, msg?: string) => {
+        const wrap = form.querySelector<HTMLElement>(`[data-field="${name}"]`);
+        if (!wrap) return;
+        const ctrl = wrap.querySelector<HTMLElement>('input,select,textarea')!;
+        wrap.querySelector<HTMLElement>('[data-error]')!.textContent = msg ?? '';
+        if (msg) ctrl.setAttribute('aria-invalid', 'true'); else ctrl.removeAttribute('aria-invalid');
+      };
+      const names = Array.from(form.querySelectorAll<HTMLElement>('[data-field]')).map((f) => f.dataset.field!);
+
+      // Validate a field when the user leaves it, and keep re-checking while it is invalid.
+      form.querySelectorAll<HTMLElement>('input,select,textarea').forEach((ctrl) => {
+        const name = (ctrl as HTMLInputElement).name;
+        if (!names.includes(name)) return;
+        const check = () => showError(name, (run() as Record<string, string>)[name]);
+        ctrl.addEventListener('blur', check);
+        ctrl.addEventListener('input', () => { if (ctrl.getAttribute('aria-invalid') === 'true') check(); });
+        ctrl.addEventListener('change', () => { if (ctrl.getAttribute('aria-invalid') === 'true') check(); });
+      });
+
+      const setStatus = (state: 'success' | 'error' | 'demo' | '', html = '') => {
+        status.dataset.state = state;
+        status.innerHTML = html;
+      };
+      const contactLine = `call <a href="${cfg.phoneTel}">${cfg.phone}</a> or email <a href="mailto:${cfg.email}">${cfg.email}</a>`;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        setStatus('');
+        const values = read();
+
+        // Honeypot: bots fill hidden fields. Pretend success, send nothing.
+        if (isSpam(values)) { setStatus('success', 'Thank you. Your message has been received.'); form.reset(); return; }
+
+        const errors = run() as Record<string, string | undefined>;
+        names.forEach((n) => showError(n, errors[n]));
+        const firstBad = names.find((n) => errors[n]);
+        if (firstBad) {
+          setStatus('error', `Please correct ${Object.keys(errors).length === 1 ? 'the highlighted field' : 'the highlighted fields'} and try again.`);
+          form.querySelector<HTMLElement>(`[data-field="${firstBad}"] input, [data-field="${firstBad}"] select, [data-field="${firstBad}"] textarea`)?.focus();
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+        const result = await submitForm(kind, values, { endpoint: cfg.endpoint, accessKey: cfg.accessKey });
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.dataset.label ?? 'Send';
+
+        if (result.status === 'sent') {
+          setStatus('success', `<strong>Thank you, ${escapeHtml(values.fullName.split(' ')[0])}.</strong> Your ${kind === 'booking' ? 'booking request' : 'enquiry'} has been sent. We will contact you on the phone number or email you provided.`);
+          form.reset();
+          names.forEach((n) => showError(n));
+        } else if (result.status === 'demo') {
+          setStatus('demo', `<strong>Demo mode: nothing was sent.</strong> This form is not connected to an inbox yet. To reach us now, ${contactLine}.`);
+        } else {
+          setStatus('error', `<strong>Sorry, we could not send your ${kind === 'booking' ? 'request' : 'enquiry'}.</strong> ${escapeHtml(result.message)} Please try again, or ${contactLine}.`);
+        }
+        status.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    });
+  }
+
+  function escapeHtml(s: string) {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+  }
+</script>

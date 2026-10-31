@@ -1,0 +1,46 @@
+---
+import Media from '../ui/Media.astro';
+import Icon from '../ui/Icon.astro';
+import { contact, telHref } from '../../config/site';
+import { hero } from '../../content/pages';
+const phone = contact.phones[0];
+---
+<section class="hero">
+  <div class="container hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow">{hero.eyebrow}</p>
+      <h1>{hero.title}</h1>
+      <p class="lead">{hero.lead}</p>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="/contact">Make an Enquiry <Icon name="arrow-right" size={18} /></a>
+        <a class="btn btn--outline" href={telHref(phone.tel)}><Icon name="phone" size={18} /> {phone.display}</a>
+      </div>
+    </div>
+    <div class="hero__media">
+      <Media image={hero.image} eager sizes="(min-width: 960px) 520px, 100vw" />
+      <div class="hero__badge">
+        <span class="hero__badge-icon"><Icon name="heart" size={22} /></span>
+        <span><strong>Caring with compassion</strong><span class="hero__badge-sub">Home nursing care</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero { position: relative; overflow: hidden; padding-block: clamp(2.5rem, 2rem + 4vw, 5.5rem); background: radial-gradient(48rem 28rem at 90% 10%, var(--c-primary-tint), transparent 70%), radial-gradient(36rem 24rem at -5% 100%, var(--c-secondary-soft), transparent 70%), var(--c-bg-soft); }
+  .hero__grid { display: grid; gap: clamp(2rem, 1.5rem + 3vw, 4rem); align-items: center; }
+  .hero__copy { display: grid; gap: 1.25rem; }
+  .hero__copy .lead { max-width: 38rem; }
+  .hero .btn-row { margin-top: 0.5rem; }
+  .hero__media { position: relative; max-width: 34rem; width: 100%; }
+  .hero__media :global(.media) { box-shadow: var(--shadow-lg); border-radius: 1.75rem; }
+  .hero__badge { position: absolute; left: 1rem; bottom: -1.25rem; display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.1rem 0.8rem 0.85rem; background: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); font-size: 0.9375rem; line-height: 1.3; }
+  .hero__badge strong { display: block; color: var(--c-ink); }
+  .hero__badge-sub { color: var(--c-muted); font-size: 0.8125rem; }
+  .hero__badge-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--c-secondary-soft); color: var(--c-secondary); }
+  @media (min-width: 960px) {
+    .hero__grid { grid-template-columns: 1.05fr 0.95fr; }
+    .hero__media { max-width: none; }
+    .hero__badge { left: -1.5rem; }
+  }
+</style>

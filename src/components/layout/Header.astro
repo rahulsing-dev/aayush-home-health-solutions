@@ -1,0 +1,181 @@
+---
+import Logo from '../ui/Logo.astro';
+import Icon from '../ui/Icon.astro';
+import { contact, telHref } from '../../config/site';
+import { headerCta, mainNav } from '../../config/navigation';
+import { cleanPath } from '../../lib/paths';
+
+const path = cleanPath(Astro.url.pathname);
+const isActive = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
+const phone = contact.phones[0];
+---
+<aside class="topbar" aria-label="Quick contact">
+  <div class="container topbar__row">
+    <p class="topbar__item"><Icon name="clock" size={16} /> {contact.availability}</p>
+    <div class="topbar__links">
+      <a href={telHref(phone.tel)}><Icon name="phone" size={16} /> {phone.display}</a>
+      <a href={`mailto:${contact.email}`}><Icon name="mail" size={16} /> {contact.email}</a>
+    </div>
+  </div>
+</aside>
+
+<header class="site-header" data-site-header>
+  <div class="container header__row">
+    <a href="/" class="header__brand"><Logo /></a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul role="list" class="nav__list">
+        {mainNav.map((item) => (
+          <li class:list={['nav__item', item.children && 'has-sub']} data-has-sub={item.children ? '' : undefined}>
+            <a href={item.href} class="nav__link" aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+            {item.children && (
+              <>
+                <button type="button" class="nav__sub-toggle" aria-expanded="false" aria-controls={`submenu-${item.label}`} aria-label={`${item.label} submenu`}>
+                  <Icon name="chevron-down" size={16} />
+                </button>
+                <ul role="list" class="submenu" id={`submenu-${item.label}`}>
+                  {item.children.map((c) => (
+                    <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="header__actions">
+      <a class="btn btn--primary btn--sm header__cta" href={headerCta.href}>{headerCta.label}</a>
+      <a class="header__call" href={telHref(phone.tel)} aria-label={`Call ${phone.display}`}><Icon name="phone" size={22} /></a>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-menu" data-menu-toggle>
+        <Icon name="menu" size={24} class="menu-toggle__open" />
+        <Icon name="close" size={24} class="menu-toggle__close" />
+        <span class="sr-only">Menu</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mobile-menu" id="mobile-menu" data-mobile-menu hidden>
+    <nav aria-label="Mobile">
+      <ul role="list" class="mobile-menu__list">
+        <li><a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a></li>
+        {mainNav.map((item) => (
+          <li>
+            <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+            {item.children && (
+              <ul role="list" class="mobile-menu__sub">
+                {item.children.map((c) => <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>)}
+              </ul>
+            )}
+          </li>
+        ))}
+        <li><a href="/contact" aria-current={isActive('/contact') ? 'page' : undefined}>Contact Us</a></li>
+      </ul>
+    </nav>
+    <div class="mobile-menu__foot">
+      <a class="btn btn--primary" href={headerCta.href}>{headerCta.label}</a>
+      <a class="btn btn--outline" href={telHref(phone.tel)}><Icon name="phone" size={18} /> Call {phone.display}</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .topbar { background: var(--c-navy); color: #d5e2ee; font-size: var(--fs-300); }
+  .topbar__row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; min-height: 2.5rem; }
+  .topbar p { display: inline-flex; align-items: center; gap: 0.45rem; margin: 0; }
+  .topbar__links { display: flex; gap: 1.5rem; }
+  .topbar a { color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; }
+  .topbar a:hover { text-decoration: underline; color: #fff; }
+  .topbar :global(svg) { opacity: 0.85; }
+  @media (max-width: 720px) { .topbar__links a:last-child { display: none; } .topbar__row { justify-content: center; } .topbar__links { display: none; } }
+
+  .site-header { position: sticky; top: 0; z-index: 100; background: #fff; /* no backdrop-filter: it would become the containing block of the fixed mobile menu */ border-bottom: 1px solid var(--c-line); transition: box-shadow var(--dur) var(--ease); }
+  .site-header.is-scrolled { box-shadow: var(--shadow-md); }
+  .header__row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: var(--header-h); }
+  .header__brand { display: inline-flex; text-decoration: none; border-radius: var(--radius-sm); }
+  .header__actions { display: flex; align-items: center; gap: 0.5rem; }
+  .header__cta { display: none; }
+  .header__call, .menu-toggle { display: inline-grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%; border: 1px solid var(--c-line); background: #fff; color: var(--c-primary-strong); cursor: pointer; }
+  .header__call:hover, .menu-toggle:hover { background: var(--c-primary-soft); }
+  .menu-toggle :global(.menu-toggle__close) { display: none; }
+  .menu-toggle[aria-expanded='true'] :global(.menu-toggle__open) { display: none; }
+  .menu-toggle[aria-expanded='true'] :global(.menu-toggle__close) { display: block; }
+
+  .nav { display: none; }
+  .nav__list { display: flex; align-items: center; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
+  .nav__item { position: relative; display: flex; align-items: center; }
+  .nav__link { display: block; padding: 0.55rem 0.7rem; border-radius: var(--radius-sm); color: var(--c-ink); font-weight: 560; font-size: 0.95rem; text-decoration: none; position: relative; white-space: nowrap; }
+  .nav__link:hover { color: var(--c-primary); background: var(--c-primary-soft); }
+  .nav__link[aria-current='page'] { color: var(--c-primary); }
+  .nav__link[aria-current='page']::after { content: ''; position: absolute; left: 0.7rem; right: 0.7rem; bottom: 0.2rem; height: 2px; background: var(--c-primary); border-radius: 2px; }
+  .nav__sub-toggle { margin-left: -0.45rem; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border: 0; background: transparent; border-radius: 50%; color: var(--c-muted); cursor: pointer; }
+  .nav__sub-toggle :global(svg) { transition: transform var(--dur) var(--ease); }
+  .nav__sub-toggle[aria-expanded='true'] :global(svg) { transform: rotate(180deg); }
+  .submenu { position: absolute; top: calc(100% + 0.35rem); left: 0; min-width: 14rem; margin: 0; padding: 0.5rem; list-style: none; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transform: translateY(6px); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease), visibility var(--dur); }
+  .has-sub:not([data-suppress]):hover .submenu, .has-sub[data-open] .submenu { opacity: 1; visibility: visible; transform: none; }
+  .submenu a { display: block; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); color: var(--c-ink); text-decoration: none; font-weight: 520; }
+  .submenu a:hover, .submenu a[aria-current='page'] { background: var(--c-primary-soft); color: var(--c-primary); }
+
+  .mobile-menu { position: fixed; inset: 0; top: var(--mobile-menu-top, 4.5rem); background: #fff; overflow-y: auto; padding: 1rem var(--gutter) 2rem; display: flex; flex-direction: column; gap: 1.5rem; overscroll-behavior: contain; }
+  .mobile-menu__list { list-style: none; margin: 0; padding: 0; }
+  .mobile-menu__list > li { border-bottom: 1px solid var(--c-line); }
+  .mobile-menu__list a { display: block; padding: 0.95rem 0.25rem; color: var(--c-ink); font-weight: 600; font-size: 1.0625rem; text-decoration: none; }
+  .mobile-menu__list a[aria-current='page'] { color: var(--c-primary); }
+  .mobile-menu__sub { list-style: none; margin: 0 0 0.5rem; padding: 0 0 0 1rem; border-left: 2px solid var(--c-primary-tint); }
+  .mobile-menu__sub a { font-weight: 500; padding-block: 0.6rem; font-size: 1rem; }
+  .mobile-menu__foot { display: grid; gap: 0.75rem; }
+
+  @media (min-width: 1100px) {
+    .nav { display: block; }
+    .header__cta { display: inline-flex; }
+    .header__call, .menu-toggle, .mobile-menu { display: none !important; }
+  }
+  @media (min-width: 1100px) and (max-width: 1239px) { .nav__link { padding-inline: 0.55rem; font-size: 0.92rem; } }
+</style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-site-header]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-mobile-menu]');
+
+  // Elevate the header once the page scrolls.
+  const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // ----- Mobile menu -----
+  function setMenu(open: boolean) {
+    if (!toggle || !menu || !header) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    menu.hidden = !open;
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    if (open) menu.style.setProperty('--mobile-menu-top', `${header.getBoundingClientRect().bottom}px`);
+  }
+  toggle?.addEventListener('click', () => setMenu(toggle.getAttribute('aria-expanded') !== 'true'));
+  menu?.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) setMenu(false); });
+  window.matchMedia('(min-width: 1100px)').addEventListener('change', (e) => { if (e.matches) setMenu(false); });
+
+  // Keep keyboard focus inside the open mobile menu (toggle + panel).
+  document.addEventListener('keydown', (e) => {
+    if (!toggle || !menu || menu.hidden) return;
+    if (e.key === 'Escape') { setMenu(false); toggle.focus(); return; }
+    if (e.key !== 'Tab') return;
+    const focusables = [toggle, ...menu.querySelectorAll<HTMLElement>('a[href]')];
+    const first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  // ----- Desktop dropdowns (hover works in CSS; this adds keyboard / touch support) -----
+  document.querySelectorAll<HTMLElement>('[data-has-sub]').forEach((item) => {
+    const btn = item.querySelector<HTMLButtonElement>('.nav__sub-toggle');
+    if (!btn) return;
+    const set = (open: boolean) => { item.toggleAttribute('data-open', open); btn.setAttribute('aria-expanded', String(open)); };
+    btn.addEventListener('click', () => set(!item.hasAttribute('data-open')));
+    item.addEventListener('focusout', (e) => { if (!item.contains((e as FocusEvent).relatedTarget as Node)) set(false); });
+    item.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Escape') { set(false); item.setAttribute('data-suppress', ''); btn.focus(); } });
+    item.addEventListener('mouseleave', () => item.removeAttribute('data-suppress'));
+    document.addEventListener('click', (e) => { if (!item.contains(e.target as Node)) set(false); });
+  });
+</script>

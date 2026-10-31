@@ -1,0 +1,56 @@
+---
+import { contact, site } from '../../config/site';
+import { about } from '../../content/pages';
+import { cleanPath } from '../../lib/paths';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Home page uses the title as-is; others get " | Aayush Home Health Solutions". */
+  isHome?: boolean;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  withBusinessSchema?: boolean;
+}
+const { title, description = site.description, isHome = false, noindex = false, type = 'website', publishedTime, withBusinessSchema = false } = Astro.props;
+
+const fullTitle = isHome ? title : `${title} | ${site.name}`;
+const canonical = new URL(cleanPath(Astro.url.pathname), Astro.site).toString();
+
+const businessSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: site.name,
+  description: site.description,
+  url: new URL('/', Astro.site).toString(),
+  telephone: contact.phones[0].tel,
+  email: contact.email,
+  foundingDate: '2020-02',
+  founder: { '@type': 'Person', name: about.founder.name },
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '#4, Sai Enclave, 1st Cross, KSR Main Road, Banjara Layout, Kanakagiri, Horamavu Post',
+    addressLocality: 'Bangalore',
+    postalCode: '560043',
+    addressCountry: 'IN',
+  },
+  areaServed: ['Bangalore'],
+  openingHours: 'Mo-Su 00:00-23:59',
+};
+---
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+<meta property="og:site_name" content={site.name} />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:locale" content="en_IN" />
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+{withBusinessSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(businessSchema)} />}

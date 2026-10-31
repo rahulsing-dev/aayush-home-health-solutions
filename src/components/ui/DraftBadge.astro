@@ -1,0 +1,11 @@
+---
+/** Marks content that is NOT verified from the previous website. Hidden when PUBLIC_SHOW_DRAFT_FLAGS=false. */
+import { showDraftFlags } from '../../config/site';
+interface Props { label?: string; class?: string }
+const { label = 'Placeholder — confirm', class: className } = Astro.props;
+---
+{showDraftFlags && <span class:list={['draft-badge', className]} data-draft-flag>{label}</span>}
+
+<style>
+  .draft-badge { display: inline-block; vertical-align: middle; padding: 0.15rem 0.6rem; border-radius: 999px; background: var(--c-draft-soft); color: var(--c-draft); border: 1px solid #f0d58a; font-size: 0.75rem; font-weight: 650; letter-spacing: 0.02em; line-height: 1.4; text-transform: none; }
+</style>

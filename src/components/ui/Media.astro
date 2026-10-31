@@ -1,0 +1,45 @@
+---
+/**
+ * Renders an ImageSlot. Empty `src` -> neutral labelled placeholder that holds its
+ * aspect ratio, so layouts stay balanced before real photography arrives.
+ */
+import type { ImageSlot } from '../../lib/types';
+import Icon from './Icon.astro';
+
+interface Props { image: ImageSlot; class?: string; eager?: boolean; sizes?: string }
+const { image, class: className, eager = false, sizes } = Astro.props;
+---
+<div class:list={['media', className]} style={`aspect-ratio: ${image.ratio};`}>
+  {image.src ? (
+    <img
+      src={image.src}
+      alt={image.alt}
+      width={image.width}
+      height={image.height}
+      sizes={sizes}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      fetchpriority={eager ? 'high' : undefined}
+    />
+  ) : (
+    <div class="media__ph" role="img" aria-label={`Image placeholder: ${image.alt}`}>
+      <Icon name="image" size={30} />
+      <span class="media__label">Image Placeholder</span>
+      <span class="media__dims">{image.width} × {image.height} px · {image.ratio.replace(/\s/g, '')}</span>
+    </div>
+  )}
+</div>
+
+<style>
+  .media { position: relative; overflow: hidden; border-radius: var(--radius-lg); background: var(--c-primary-soft); container-type: inline-size; }
+  .media img { width: 100%; height: 100%; object-fit: cover; }
+  .media__ph {
+    position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.35rem; padding: 1rem; text-align: center; color: #5d7387;
+    background:
+      linear-gradient(135deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0)) ,
+      repeating-linear-gradient(135deg, #e6eef5 0 14px, #dfe8f0 14px 28px);
+  }
+  .media__label { font-size: 0.8125rem; font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; }
+  .media__dims { font-size: 0.75rem; opacity: 0.9; font-variant-numeric: tabular-nums; }
+  @container (max-width: 200px) { .media__dims { display: none; } .media__label { font-size: 0.7rem; } }
+</style>

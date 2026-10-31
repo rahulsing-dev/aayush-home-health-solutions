@@ -1,0 +1,7 @@
+# Netlify serves /404.html automatically for unknown URLs, so no redirect rules are needed.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/sections/Hero.astro';
+import TrustStrip from '../components/sections/TrustStrip.astro';
+import ServiceCards from '../components/sections/ServiceCards.astro';
+import FeatureBand from '../components/sections/FeatureBand.astro';
+import WhyGrid from '../components/sections/WhyGrid.astro';
+import Process from '../components/sections/Process.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import BlogCards from '../components/sections/BlogCards.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import Media from '../components/ui/Media.astro';
+import Icon from '../components/ui/Icon.astro';
+import { about, career } from '../content/pages';
+import { site } from '../config/site';
+---
+<BaseLayout isHome title="Home Nursing Services in Bangalore | Aayush Home Health Solutions" description={site.description}>
+  <Hero />
+  <TrustStrip />
+
+  <section class="section" aria-labelledby="services-h">
+    <div class="container">
+      <SectionHead center id="services-h" eyebrow="Our service" title="Professional nursing care, at home" text="Trained, trustworthy nursing staff for elderly persons and patients who need dependable care in the comfort of their own homes." />
+      <ServiceCards />
+    </div>
+  </section>
+
+  <FeatureBand />
+
+  <section class="section" aria-labelledby="about-h">
+    <div class="container about">
+      <div class="about__media reveal"><Media image={about.founder.image} /></div>
+      <div class="about__copy reveal" style="--reveal-delay:100ms">
+        <p class="eyebrow">About us</p>
+        <h2 id="about-h">Home health care built on personal experience</h2>
+        <p class="lead">{about.story[0]}</p>
+        <p>{about.story[1]}</p>
+        <p class="about__sign"><strong>{about.founder.name}</strong><span>{about.founder.role}</span></p>
+        <a class="btn btn--outline" href="/about">Read our story</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="why-h">
+    <div class="container">
+      <SectionHead center id="why-h" eyebrow="Why Aayush" title="What families can count on" />
+      <WhyGrid />
+    </div>
+  </section>
+
+  <section class="section"><div class="container"><Process /></div></section>
+
+  {/*<section class="section section--soft" aria-labelledby="tst-h">
+    <div class="container">
+      <SectionHead center id="tst-h" eyebrow="Testimonials" title="Words from the families we support" />
+      <Testimonials />
+    </div>
+  </section>*/}
+
+  <section class="section career" aria-labelledby="career-h">
+    <div class="container career__inner">
+      <span class="career__icon"><Icon name="briefcase" size={28} /></span>
+      <div class="career__copy">
+        <h2 id="career-h">Join our team</h2>
+        <p class="lead">{career.intro}</p>
+      </div>
+      <a class="btn btn--outline" href="/career#openings">Current Openings</a>
+    </div>
+  </section>
+
+  <section class="section section--soft" aria-labelledby="blog-h">
+    <div class="container">
+      <SectionHead center id="blog-h" eyebrow="Blog" title="Latest from Aayush" />
+      <BlogCards limit={2} />
+      <p class="more"><a class="link-arrow" href="/blog">View all posts <Icon name="arrow-right" size={18} /></a></p>
+    </div>
+  </section>
+
+  <CtaBand title="Need care for someone you love?" text="Tell us what you need. We are reachable 24/7 by phone and email." />
+</BaseLayout>
+
+<style>
+  .about { display: grid; gap: 2.25rem; align-items: center; }
+  .about__media { max-width: 26rem; }
+  .about__copy { display: grid; gap: 1rem; justify-items: start; }
+  .about__sign { display: grid; line-height: 1.35; padding-left: 1rem; border-left: 3px solid var(--c-accent); }
+  .about__sign strong { color: var(--c-ink); }
+  .about__sign span { color: var(--c-muted); font-size: 0.9375rem; }
+  @media (min-width: 900px) { .about { grid-template-columns: 0.8fr 1.2fr; gap: 4.5rem; } .about__media { max-width: none; } }
+  .career { background: var(--c-bg-warm); padding-block: clamp(2.75rem, 2rem + 3vw, 4.5rem); }
+  .career__inner { display: grid; gap: 1.5rem; align-items: center; justify-items: start; }
+  .career__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #fff; color: var(--c-primary); box-shadow: var(--shadow-sm); }
+  .career__copy { display: grid; gap: 0.6rem; max-width: 46rem; }
+  @media (min-width: 960px) { .career__inner { grid-template-columns: auto 1fr auto; gap: 2rem; } }
+  .more { margin-top: 2rem; text-align: center; }
+</style>

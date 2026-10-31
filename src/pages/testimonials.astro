@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+---
+<BaseLayout title="Testimonials" description="Read what families say about the home nursing care provided by Aayush Home Health Solutions.">
+  <PageHeader title="Testimonials" eyebrow="Kind words" intro="Families who have trusted Aayush with the care of their loved ones share their experience." crumbs={[{ label: 'Testimonials' }]} />
+  <section class="section"><div class="container"><Testimonials /></div></section>
+  <CtaBand title="Let us help your family too" text="Get in touch. We are reachable 24/7." />
+</BaseLayout>

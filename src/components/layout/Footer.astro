@@ -1,0 +1,115 @@
+---
+import { getCollection } from 'astro:content';
+import Logo from '../ui/Logo.astro';
+import Icon from '../ui/Icon.astro';
+import { contact, offices, site, socialLinks, telHref } from '../../config/site';
+import { footerLegal, mainNav } from '../../config/navigation';
+import { services } from '../../content/services';
+import { formatDate } from '../../lib/format';
+
+const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 2);
+const year = new Date().getFullYear();
+const company = mainNav.filter((n) => !n.children);
+---
+<footer class="site-footer">
+  <div class="container footer__top">
+    <div class="footer__brand">
+      <a href="/"><Logo variant="light" /></a>
+      <p class="footer__tag">{site.tagline}.</p>
+      <ul role="list" class="footer__contact">
+        {contact.phones.map((p) => (
+          <li><Icon name="phone" size={18} /><a href={telHref(p.tel)}>{p.display}</a></li>
+        ))}
+        <li><Icon name="mail" size={18} /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+        <li><Icon name="clock" size={18} /><span>{contact.availability}</span></li>
+      </ul>
+    </div>
+
+    <nav class="footer__col" aria-label="Services">
+      <h2 class="footer__h">Services</h2>
+      <ul role="list">
+        {services.map((s) => <li><a href={`/services/${s.slug}`}>{s.title}</a></li>)}
+      </ul>
+      <h2 class="footer__h footer__h--spaced">Company</h2>
+      <ul role="list">
+        <li><a href="/">Home</a></li>
+        {company.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+        <li><a href="/contact">Contact Us</a></li>
+      </ul>
+    </nav>
+
+    <div class="footer__col">
+      <h2 class="footer__h">Recent posts</h2>
+      <ul role="list" class="footer__posts">
+        {posts.map((p) => (
+          <li>
+            <a href={`/blog/${p.id}`}>{p.data.title}</a>
+            <time datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+   <div class="footer__offices">
+    <h2 class="footer__h">{offices.length > 1 ? 'Office addresses' : 'Office address'}</h2>
+    <div class:list={['footer__office-grid', offices.length === 1 && 'footer__office-grid--single']}>
+      {offices.map((o) => (
+        <address class="office">
+          <h3>{o.name}</h3>
+          <p>{o.addressLines.map((l) => <span>{l}</span>)}</p>
+          {o.contacts.map((c) => (
+            <p class="office__contact">{c.name && <span>{c.name}: </span>}{c.phones.map((ph, i) => <>{i > 0 && ', '}<a href={telHref(ph)}>{ph}</a></>)}</p>
+          ))}
+        </address>
+      ))}
+    </div>
+   </div>
+  </div>
+
+  <div class="footer__bottom">
+    <div class="container footer__bottom-row">
+      <p>© {year} {site.name}. All rights reserved.</p>
+      <ul role="list" class="footer__legal">
+        {footerLegal.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+        {socialLinks.map((s) => <li><a href={s.href} rel="noopener noreferrer" target="_blank">{s.label}</a></li>)}
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer { background: var(--c-navy); color: #c6d6e4; font-size: 0.9375rem; }
+  .site-footer a { color: #e8f1f8; text-decoration: none; }
+  .site-footer a:hover { color: #fff; text-decoration: underline; text-underline-offset: 0.2em; }
+  .site-footer :focus-visible { outline-color: #8fc4f0; }
+  .footer__top { display: grid; gap: 2.5rem; padding-block: clamp(3rem, 2rem + 4vw, 4.5rem) 2.5rem; }
+  .footer__tag { margin-top: 1rem; font-family: var(--font-display); font-size: 1.125rem; color: #fff; }
+  .footer__contact { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.65rem; }
+  .footer__contact li { display: flex; align-items: center; gap: 0.6rem; }
+  .footer__contact :global(svg) { color: #8fc4f0; flex: none; }
+  .footer__h { font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; margin-bottom: 1rem; }
+  .footer__h--spaced { margin-top: 2rem; }
+  .footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+  .footer__posts { gap: 1.1rem !important; }
+  .footer__posts li { display: grid; gap: 0.2rem; }
+  .footer__posts a { font-weight: 560; line-height: 1.4; }
+  .footer__posts time { font-size: 0.8125rem; color: #9db3c6; }
+  .footer__offices { padding-block: 2rem 2.5rem; border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .footer__office-grid { display: grid; gap: 1.75rem; }
+  .office { font-style: normal; }
+  .office h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 650; color: #fff; margin-bottom: 0.5rem; letter-spacing: 0; }
+  .office p { color: #b3c6d6; line-height: 1.6; }
+  .office p span { display: block; }
+  .office .office__contact { margin-top: 0.35rem; }
+  .office a { white-space: nowrap; }
+  .office .office__contact span { display: inline; }
+  .footer__bottom { border-top: 1px solid rgb(255 255 255 / 0.12); }
+  .footer__bottom-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 1.5rem; padding-block: 1.25rem; }
+  .footer__legal { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; list-style: none; margin: 0; padding: 0; }
+  @media (min-width: 720px) {
+    .footer__top { grid-template-columns: 1.3fr 1fr 1fr; }
+    .footer__office-grid:not(.footer__office-grid--single) { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  }
+</style>

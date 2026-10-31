@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/layout/PageHeader.astro';
+import WhyGrid from '../components/sections/WhyGrid.astro';
+import Process from '../components/sections/Process.astro';
+import CtaBand from '../components/sections/CtaBand.astro';
+---
+<BaseLayout title="Why Aayush" description="Prompt response, skilled and background verified staff, and a founder with an Indian Armed Forces background: why families choose Aayush Home Health Solutions.">
+  <PageHeader title="Why Aayush" eyebrow="Why choose us" intro="Genuine service, assurance of safety and punctuality, and caring, trustworthy staff are the foundation of Aayush." crumbs={[{ label: 'Why Aayush' }]} />
+  <section class="section"><div class="container"><h2 class="sr-only">Reasons to choose Aayush</h2><WhyGrid withImages /></div></section>
+  <section class="section section--soft"><div class="container"><Process /></div></section>
+  <CtaBand title="Experience the Aayush difference" text="Talk to our team about the care your family needs." />
+</BaseLayout>

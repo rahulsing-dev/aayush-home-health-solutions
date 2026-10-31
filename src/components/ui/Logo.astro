@@ -1,0 +1,72 @@
+
+---
+import { site } from '../../config/site';
+
+interface Props {
+  variant?: 'dark' | 'light';
+  class?: string;
+}
+
+const {
+  variant = 'dark',
+  class: className
+} = Astro.props;
+
+const logoSrc = '/images/aayush-home-health-solutions.svg';
+---
+
+<span class:list={['logo', `logo--${variant}`, className]}>
+  <a href="/" class="logo__link" aria-label="Aayush Home Health Solutions home">
+    <img
+      src={logoSrc}
+      alt={site.name || 'Aayush Home Health Solutions'}
+      class="logo__image"
+      width="60"
+      height="82"
+      fetchpriority="high"
+      decoding="async"
+    />
+  </a>
+</span>
+
+<style>
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .logo__link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+  }
+
+  .logo__image {
+    display: block;
+    width: auto;
+    height: 76px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  /* Light variant */
+  .logo--light {
+    filter: none;
+  }
+
+  /* Tablet */
+  @media (max-width: 768px) {
+    .logo__image {
+      height: 66px;
+    }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .logo__image {
+      height: 58px;
+    }
+  }
+</style>
