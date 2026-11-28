@@ -1,7 +1,8 @@
 ---
-import { contact, site } from '../../config/site';
+import { contact, offices, site, streetAddress } from '../../config/site';
 import { about } from '../../content/pages';
 import { cleanPath } from '../../lib/paths';
+import { jsonLd } from '../../lib/format';
 
 interface Props {
   title: string;
@@ -17,6 +18,9 @@ const { title, description = site.description, isHome = false, noindex = false, 
 
 const fullTitle = isHome ? title : `${title} | ${site.name}`;
 const canonical = new URL(cleanPath(Astro.url.pathname), Astro.site).toString();
+// Default share image (regenerate with scripts/generate-brand-assets.mjs).
+const ogImage = new URL('/og-default.jpg', Astro.site).toString();
+const office = offices[0];
 
 const businessSchema = {
   '@context': 'https://schema.org',
@@ -24,18 +28,22 @@ const businessSchema = {
   name: site.name,
   description: site.description,
   url: new URL('/', Astro.site).toString(),
+  logo: new URL('/images/aayush-home-health-solutions.svg', Astro.site).toString(),
+  image: ogImage,
   telephone: contact.phones[0].tel,
   email: contact.email,
   foundingDate: '2020-02',
   founder: { '@type': 'Person', name: about.founder.name },
+  // Built from the same config as the visible footer/contact address, so they can never disagree.
   address: {
     '@type': 'PostalAddress',
-    streetAddress: '#4, Sai Enclave, 1st Cross, KSR Main Road, Banjara Layout, Kanakagiri, Horamavu Post',
-    addressLocality: 'Bangalore',
-    postalCode: '560043',
+    streetAddress: streetAddress(office),
+    addressLocality: office.locality,
+    addressRegion: office.region,
+    postalCode: office.postalCode,
     addressCountry: 'IN',
   },
-  areaServed: ['Bangalore'],
+  areaServed: [office.locality],
   openingHours: 'Mo-Su 00:00-23:59',
 };
 ---
@@ -49,8 +57,13 @@ const businessSchema = {
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />
 <meta property="og:locale" content="en_IN" />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={`${site.name} logo beside a caregiver helping an elderly man`} />
 {publishedTime && <meta property="article:published_time" content={publishedTime} />}
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content={ogImage} />
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
-{withBusinessSchema && <script is:inline type="application/ld+json" set:html={JSON.stringify(businessSchema)} />}
+{withBusinessSchema && <script is:inline type="application/ld+json" set:html={jsonLd(businessSchema)} />}

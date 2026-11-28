@@ -5,7 +5,10 @@ dist/
 .env.*
 !.env.example
 .DS_Store
+.vscode/
 *.log
 coverage/
 dist-ep/
 qa/screenshots/
+# Uncropped owner photos/video (client consent pending): keep local, never publish
+docs/media-originals/

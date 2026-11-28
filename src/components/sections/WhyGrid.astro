@@ -1,30 +1,53 @@
 ---
-import Media from '../ui/Media.astro';
+/**
+ * Reasons to choose Aayush, as cards (content: `whyAayush.reasons` in content/pages.ts).
+ * `compact` is the home page version: featured reasons only, two columns, no step numbers.
+ */
 import Icon from '../ui/Icon.astro';
 import { whyAayush } from '../../content/pages';
-interface Props { withImages?: boolean }
-const { withImages = false } = Astro.props;
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+const reasons = compact ? whyAayush.reasons.filter((r) => r.featured) : whyAayush.reasons;
 ---
-<ul role="list" class:list={['why', withImages && 'why--img']}>
-  {whyAayush.map((w, i) => (
-    <li class="why__card reveal" style={`--reveal-delay:${i * 90}ms`}>
-      {withImages && <Media image={w.image} />}
-      <div class="why__body">
-        <span class="why__icon"><Icon name={w.icon} size={26} /></span>
-        <h3>{w.title}</h3>
-        <p>{w.text}</p>
-      </div>
+<ul role="list" class:list={['why', compact && 'why--compact']}>
+  {reasons.map((r, i) => (
+    <li class:list={['why__card', 'reveal', `tone-${r.tone}`]} style={`--reveal-delay:${i * 80}ms`}>
+      <span class="why__icon"><Icon name={r.icon} size={compact ? 22 : 26} /></span>
+      <h3>{r.title}</h3>
+      <p>{r.text}</p>
+      <p class="why__proof"><Icon name="check" size={14} /> {r.proof}</p>
     </li>
   ))}
 </ul>
 
 <style>
-  .why { display: grid; gap: 1.5rem; list-style: none; padding: 0; margin: 0; }
-  @media (min-width: 760px) { .why { grid-template-columns: repeat(3, 1fr); } }
-  .why__card { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
-  .why__card :global(.media) { border-radius: 0; }
-  .why__body { display: grid; gap: 0.75rem; padding: 1.75rem 1.5rem 2rem; align-content: start; }
-  .why__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--c-secondary-soft); color: var(--c-secondary); }
+  .why { display: grid; gap: 1.25rem; counter-reset: why; }
+  /* `translate` (not `transform`) so the hover lift does not fight the scroll-reveal transform. */
+  .why__card { counter-increment: why; position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-rows: auto auto 1fr auto; gap: 0.75rem; justify-items: start; padding: 1.75rem 1.5rem 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: opacity 600ms var(--ease) var(--reveal-delay, 0ms), transform 600ms var(--ease) var(--reveal-delay, 0ms), translate var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  /* Accent rule along the top and a soft glow of the card's tone in the corner. */
+  .why__card::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fff)); }
+  .why__card::after { content: ''; position: absolute; z-index: -1; right: -5rem; top: -5rem; width: 12rem; height: 12rem; border-radius: 50%; background: radial-gradient(circle, var(--tone-soft), transparent 70%); opacity: 0.8; transition: opacity var(--dur) var(--ease), scale 400ms var(--ease); }
+  .why__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 1rem; background: var(--tone-soft); color: var(--tone); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 14%, transparent); }
   .why h3 { font-size: 1.1875rem; line-height: 1.3; }
   .why p { color: var(--c-muted); }
+  .why .why__proof { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.35rem; padding: 0.3rem 0.75rem 0.3rem 0.55rem; border-radius: 999px; background: var(--tone-soft); color: var(--tone-ink); font-size: var(--fs-300); font-weight: 650; line-height: 1.35; }
+  .why__proof :global(svg) { flex: none; }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .why__card:hover { translate: 0 -4px; box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--tone) 30%, var(--c-line)); }
+    .why__card:hover::after { opacity: 1; scale: 1.25; }
+  }
+  @media (min-width: 640px) { .why { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; } }
+
+  /* Full page: decorative step number, drawn by CSS so it is not read out or contrast-checked as text. */
+  .why:not(.why--compact) .why__card { padding-top: 2rem; }
+  .why:not(.why--compact) .why__card > h3 { padding-right: 2.5rem; }
+  .why:not(.why--compact) .why__card > .why__icon::after { content: counter(why, decimal-leading-zero); position: absolute; top: 1.4rem; right: 1.5rem; font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1; color: color-mix(in srgb, var(--tone) 22%, #fff); }
+  @media (min-width: 1000px) { .why:not(.why--compact) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  /* Home page: tighter cards. */
+  .why--compact { gap: 1rem; }
+  .why--compact .why__card { gap: 0.6rem; padding: 1.4rem 1.25rem 1.25rem; }
+  .why--compact .why__icon { width: 2.85rem; height: 2.85rem; border-radius: 0.85rem; }
+  .why--compact h3 { font-size: 1.125rem; }
+  @media (min-width: 560px) { .why--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; } }
 </style>

@@ -1,72 +1,37 @@
-
 ---
+/**
+ * The Aayush logo image. It contains no link: callers wrap it in <a href="/">, so links
+ * are never nested. `variant="light"` puts the logo on a white tile for dark backgrounds
+ * (the logo's dark blue is unreadable on the navy footer otherwise).
+ */
 import { site } from '../../config/site';
 
 interface Props {
   variant?: 'dark' | 'light';
+  /** Header logo is above the fold; the footer one is not. */
+  eager?: boolean;
   class?: string;
 }
-
-const {
-  variant = 'dark',
-  class: className
-} = Astro.props;
-
-const logoSrc = '/images/aayush-home-health-solutions.svg';
+const { variant = 'dark', eager = false, class: className } = Astro.props;
 ---
-
 <span class:list={['logo', `logo--${variant}`, className]}>
-  <a href="/" class="logo__link" aria-label="Aayush Home Health Solutions home">
-    <img
-      src={logoSrc}
-      alt={site.name || 'Aayush Home Health Solutions'}
-      class="logo__image"
-      width="60"
-      height="82"
-      fetchpriority="high"
-      decoding="async"
-    />
-  </a>
+  <img
+    src="/images/aayush-home-health-solutions.svg"
+    alt={site.name}
+    class="logo__image"
+    width="352"
+    height="535"
+    loading={eager ? 'eager' : 'lazy'}
+    fetchpriority={eager ? 'high' : undefined}
+    decoding="async"
+  />
 </span>
 
 <style>
-  .logo {
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-    line-height: 1;
-  }
-
-  .logo__link {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-  }
-
-  .logo__image {
-    display: block;
-    width: auto;
-    height: 76px;
-    max-width: 100%;
-    object-fit: contain;
-  }
-
-  /* Light variant */
-  .logo--light {
-    filter: none;
-  }
-
-  /* Tablet */
-  @media (max-width: 768px) {
-    .logo__image {
-      height: 66px;
-    }
-  }
-
-  /* Mobile */
-  @media (max-width: 480px) {
-    .logo__image {
-      height: 58px;
-    }
-  }
+  .logo { display: inline-flex; align-items: center; flex-shrink: 0; line-height: 1; }
+  .logo__image { display: block; width: auto; height: 76px; max-width: 100%; object-fit: contain; }
+  .logo--light { padding: 0.6rem 0.75rem; background: #fff; border-radius: var(--radius-md); }
+  .logo--light .logo__image { height: 96px; }
+  @media (max-width: 768px) { .logo--dark .logo__image { height: 66px; } }
+  @media (max-width: 480px) { .logo--dark .logo__image { height: 58px; } }
 </style>

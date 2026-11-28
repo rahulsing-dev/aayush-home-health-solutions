@@ -1,19 +1,27 @@
 ---
 import Icon from '../ui/Icon.astro';
-import { contact, telHref } from '../../config/site';
-interface Props { title: string; text?: string; primary?: { label: string; href: string }; showPhone?: boolean }
-const { title, text, primary = { label: 'Make an Enquiry', href: '/contact' }, showPhone = true } = Astro.props;
+import { contact, telHref, whatsappHref } from '../../config/site';
+interface Props {
+  title: string;
+  text?: string;
+  primary?: { label: string; href: string };
+  showPhone?: boolean;
+  /** WhatsApp button text and pre-filled message (defaults to a care enquiry). */
+  whatsapp?: { label: string; message: string };
+}
+const { title, text, primary = { label: 'Make an Enquiry', href: '/contact' }, showPhone = true, whatsapp } = Astro.props;
 const phone = contact.phones[0];
 ---
-<section class="cta">
+<section class="cta" aria-labelledby="cta-h">
   <div class="container cta__inner">
     <div class="cta__copy">
-      <h2>{title}</h2>
+      <h2 id="cta-h">{title}</h2>
       {text && <p>{text}</p>}
     </div>
     <div class="btn-row">
       <a class="btn btn--light" href={primary.href}>{primary.label} <Icon name="arrow-right" size={18} /></a>
       {showPhone && <a class="btn btn--ghost-light" href={telHref(phone.tel)}><Icon name="phone" size={18} /> {phone.display}</a>}
+      <a class="btn btn--ghost-light" href={whatsappHref(whatsapp?.message)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> {whatsapp?.label ?? 'WhatsApp'}<span class="sr-only"> (opens WhatsApp)</span></a>
     </div>
   </div>
 </section>

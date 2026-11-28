@@ -1,13 +1,179 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import Media from '../components/ui/Media.astro';
+import Icon from '../components/ui/Icon.astro';
 import WhyGrid from '../components/sections/WhyGrid.astro';
 import Process from '../components/sections/Process.astro';
 import CtaBand from '../components/sections/CtaBand.astro';
+import { about, whyAayush as w } from '../content/pages';
+import { testimonials } from '../content/testimonials';
+import { contact, site, telHref, whatsappHref } from '../config/site';
+
+const phone = contact.phones[0];
+const f = about.founder;
+// Only real reviews are quoted here, whatever environment this is built in.
+const familyWords = w.familyWords.flatMap((x) => {
+  const t = testimonials.find((t) => t.id === x.testimonial && !t.sample);
+  return t ? [{ ...x, t }] : [];
+});
+const promptMessage = 'Hello Aayush Home Health, I would like to arrange care at home. Could you help?';
 ---
-<BaseLayout title="Why Aayush" description="Prompt response, skilled and background verified staff, and a founder with an Indian Armed Forces background: why families choose Aayush Home Health Solutions.">
-  <PageHeader title="Why Aayush" eyebrow="Why choose us" intro="Genuine service, assurance of safety and punctuality, and caring, trustworthy staff are the foundation of Aayush." crumbs={[{ label: 'Why Aayush' }]} />
-  <section class="section"><div class="container"><h2 class="sr-only">Reasons to choose Aayush</h2><WhyGrid withImages /></div></section>
-  <section class="section section--soft"><div class="container"><Process /></div></section>
-  <CtaBand title="Experience the Aayush difference" text="Talk to our team about the care your family needs." />
+<BaseLayout title="Why Choose Aayush" description="Prompt response, trained and compassionate staff, background verified for your peace of mind, and a founder with an Indian Navy background: why Bangalore families choose Aayush Home Health Solutions.">
+  <PageHeader title={w.headline} eyebrow="Why Aayush" intro={w.intro} crumbs={[{ label: 'Why Aayush' }]}>
+    <div class="btn-row hdr-actions">
+      <a class="btn btn--primary" href="/contact">Make an Enquiry <Icon name="arrow-right" size={18} /></a>
+      <a class="btn btn--outline" href="/services">Explore our services</a>
+    </div>
+    <p class="hdr-note"><Icon name="clock" size={18} /> {contact.availability}</p>
+
+    <div slot="aside" class="hdr-visual">
+      <div class="hdr-visual__photo"><Media image={w.headerImage} eager sizes="(min-width: 1200px) 400px, (min-width: 960px) 34vw, (min-width: 520px) 24rem, 82vw" /></div>
+      <p class="hdr-visual__chip"><Icon name="shield-check" size={18} /> Background verified staff</p>
+      <div class="hdr-visual__card">
+        <span class="hdr-visual__card-icon"><Icon name="clock" size={22} /></span>
+        <p><strong><span class="live-dot" aria-hidden="true"></span> Reachable 24/7</strong><span>Phone, WhatsApp or email</span></p>
+      </div>
+    </div>
+  </PageHeader>
+
+  <section class="section" aria-labelledby="reasons-h">
+    <div class="container">
+      <SectionHead center id="reasons-h" eyebrow="Our strengths" title="Why families choose Aayush" text="Dependable home healthcare comes down to a few things done well, every single day." />
+      <WhyGrid />
+      <div class="btn-row reasons-more">
+        <a class="btn btn--primary" href="/services">Explore our services <Icon name="arrow-right" size={18} /></a>
+        <a class="btn btn--outline" href="/about">Read our story</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--warm" aria-labelledby="prompt-h">
+    <div class="container">
+      <div class="prompt reveal">
+        <div class="prompt__copy">
+          <p class="eyebrow prompt__eyebrow">{w.promptCare.eyebrow}</p>
+          <h2 id="prompt-h">{w.promptCare.title}</h2>
+          <p class="prompt__lead">{w.promptCare.text}</p>
+          <div class="btn-row">
+            <a class="btn btn--light" href={telHref(phone.tel)}><Icon name="phone" size={18} /> <span class="sr-only">Call </span>{phone.display}</a>
+            <a class="btn btn--ghost-light" href={whatsappHref(promptMessage)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Chat on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+          </div>
+        </div>
+        <ul role="list" class="prompt__points">
+          {w.promptCare.points.map((p) => (
+            <li>
+              <span class="prompt__icon"><Icon name={p.icon} size={22} /></span>
+              <span><strong>{p.title}</strong>{p.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="trust-h">
+    <div class="container">
+      <SectionHead center id="trust-h" eyebrow="Trust, earned" title="Built on duty, trusted by families" />
+      <div class:list={['trust', familyWords.length === 0 && 'trust--solo']}>
+        <article class="founder-card reveal" aria-labelledby="founder-card-h">
+          <div class="founder-card__head">
+            <div class="founder-card__photo"><Media image={{ ...f.image, ratio: '1 / 1', position: '50% 30%' }} sizes="80px" /></div>
+            <div>
+              <h3 id="founder-card-h">{f.name}</h3>
+              <p class="founder-card__role">{f.role}</p>
+              <p class="founder-card__badge"><Icon name="award" size={16} /> {f.badge}</p>
+            </div>
+          </div>
+          <p>{w.founderNote}</p>
+          <a class="link-arrow" href="/about">Meet our founder <Icon name="arrow-right" size={18} /></a>
+          <p class="founder-card__since"><Icon name="heart" size={16} /> Caring for families in Bangalore since {site.foundedLabel}</p>
+        </article>
+
+        {familyWords.length > 0 && (
+          <div class="words">
+            {familyWords.map(({ excerpt, t }, i) => (
+              <figure class="word reveal" style={`--reveal-delay:${(i + 1) * 100}ms`}>
+                <Icon name="quote" size={26} class="word__mark" />
+                <blockquote><p>{excerpt}</p></blockquote>
+                <figcaption>
+                  <span class="word__author">{t.author}</span>
+                  {t.context && <span class="word__context">{t.context}</span>}
+                </figcaption>
+                <a class="word__link" href={`/testimonials#review-${t.id}`}>Read the full review<span class="sr-only"> from {t.author}</span></a>
+              </figure>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <Process soft />
+
+  <CtaBand title="Talk to us about the care your family needs" text="Tell us what you need, and we will help you plan dependable care at home. We are reachable 24/7." />
 </BaseLayout>
+
+<style>
+  /* Header: real team photo with a verified-staff chip and the 24/7 card. */
+  .hdr-actions { margin-top: 0.5rem; }
+  .hdr-note { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--c-muted); font-weight: 600; font-size: 0.9375rem; }
+  .hdr-note :global(svg) { color: var(--c-success); }
+  .hdr-visual { position: relative; width: min(100%, 24rem); margin: 0 auto 1.5rem; }
+  .hdr-visual__photo { position: relative; }
+  .hdr-visual__photo::before { content: ''; position: absolute; inset: 1rem -0.75rem -0.75rem 1rem; border-radius: 2rem; background: linear-gradient(140deg, var(--c-secondary-soft), var(--c-primary-tint)); }
+  .hdr-visual__photo :global(.media) { position: relative; border-radius: 1.75rem; box-shadow: var(--shadow-lg); }
+  /* Chip top-left and card bottom-right keep both faces in the photo clear. */
+  .hdr-visual__chip { position: absolute; top: 1.25rem; left: -0.5rem; display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.95rem; border-radius: 999px; background: #fff; color: var(--c-ink); font-weight: 650; font-size: var(--fs-300); box-shadow: var(--shadow-md); }
+  .hdr-visual__chip :global(svg) { color: var(--c-secondary); }
+  .hdr-visual__card { position: absolute; right: -0.5rem; bottom: -1.5rem; display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 1.1rem 0.7rem 0.7rem; border-radius: var(--radius-md); background: #fff; box-shadow: var(--shadow-lg); }
+  .hdr-visual__card-icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--c-success-soft); color: var(--c-success); }
+  .hdr-visual__card p { display: grid; line-height: 1.3; color: var(--c-muted); font-size: var(--fs-300); }
+  .hdr-visual__card strong { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--c-ink); font-size: var(--fs-400); }
+  @media (min-width: 960px) { .hdr-visual { width: 100%; max-width: 25rem; margin: 0 0 1.5rem auto; } .hdr-visual__chip { left: -1.75rem; } .hdr-visual__card { right: -1.25rem; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .hdr-visual__chip { animation: why-float 6s ease-in-out infinite; }
+  }
+  @keyframes why-float { 50% { translate: 0 -6px; } }
+
+  .reasons-more { justify-content: center; margin-top: clamp(2rem, 1.5rem + 2vw, 3rem); }
+
+  /* "Timely help": a deep teal-to-blue panel. */
+  .prompt { position: relative; overflow: hidden; display: grid; gap: 2.25rem; align-items: center; padding: clamp(1.5rem, 1rem + 3vw, 3.5rem); border-radius: calc(var(--radius-lg) + 0.25rem); color: #e3f1f8; background: radial-gradient(28rem 22rem at 100% 0%, rgb(255 255 255 / 0.10), transparent 70%), linear-gradient(135deg, #073c3c, #0a5e5d 45%, var(--c-primary-strong)); box-shadow: var(--shadow-lg); }
+  .prompt::before { content: ''; position: absolute; left: -7rem; bottom: -9rem; width: 20rem; height: 20rem; border-radius: 50%; border: 2.5rem solid rgb(255 255 255 / 0.05); pointer-events: none; }
+  .prompt__copy { position: relative; display: grid; gap: 1rem; justify-items: start; }
+  .prompt .prompt__eyebrow { color: #a7e6e0; }
+  .prompt h2 { color: #fff; max-width: 18ch; }
+  .prompt__lead { font-size: var(--fs-500); max-width: 34rem; }
+  .prompt__copy .btn-row { margin-top: 0.5rem; }
+  .prompt__points { position: relative; display: grid; gap: 0.85rem; }
+  .prompt__points li { display: flex; gap: 0.9rem; align-items: flex-start; padding: 1.1rem 1.15rem; border-radius: var(--radius-md); background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.14); }
+  .prompt__points strong { display: block; color: #fff; font-size: 1.0625rem; margin-bottom: 0.1rem; }
+  .prompt__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: #fff; color: var(--c-secondary); }
+  @media (min-width: 960px) { .prompt { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3.5rem; } }
+
+  /* Founder card and families' words. */
+  .trust { display: grid; gap: 1.5rem; align-items: stretch; }
+  .founder-card { display: flex; flex-direction: column; gap: 1rem; align-items: flex-start; padding: clamp(1.5rem, 1.2rem + 1vw, 2rem); border-radius: var(--radius-lg); background: linear-gradient(160deg, var(--c-primary-soft), #fff 65%); border: 1px solid var(--c-line); box-shadow: var(--shadow-sm); }
+  .founder-card__head { display: flex; align-items: center; gap: 1rem; }
+  .founder-card__photo { flex: none; width: 5rem; }
+  .founder-card__photo :global(.media) { border-radius: 50%; box-shadow: 0 0 0 4px #fff, var(--shadow-md); }
+  .founder-card h3 { font-size: 1.25rem; }
+  .founder-card__role { color: var(--c-primary); font-weight: 650; font-size: var(--fs-300); }
+  .founder-card__badge { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.4rem; padding: 0.25rem 0.7rem; border-radius: 999px; background: var(--c-navy); color: #fff; font-size: 0.8125rem; font-weight: 650; }
+  .founder-card__since { display: flex; align-items: center; gap: 0.6rem; align-self: stretch; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--c-line); color: var(--c-muted); font-size: var(--fs-300); font-weight: 600; }
+  .founder-card__since :global(svg) { flex: none; color: var(--c-accent); }
+  .words { display: grid; gap: 1.5rem; }
+  /* The quote takes the spare height, so captions and links line up across cards. */
+  .word { position: relative; display: grid; grid-template-rows: auto 1fr auto auto; gap: 0.75rem; margin: 0; padding: clamp(1.5rem, 1.2rem + 1vw, 2rem); border-radius: var(--radius-lg); background: #fff; border: 1px solid var(--c-line); box-shadow: var(--shadow-sm); }
+  .word :global(.word__mark) { color: var(--c-accent); opacity: 0.85; }
+  .word blockquote { margin: 0; }
+  .word blockquote p { font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem); line-height: 1.45; color: var(--c-ink); }
+  .word figcaption { display: grid; gap: 0.1rem; }
+  .word__author { font-weight: 650; color: var(--c-text); }
+  .word__context { color: var(--c-muted); font-size: var(--fs-300); }
+  .word__link { justify-self: start; display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; font-size: var(--fs-300); }
+  @media (min-width: 760px) { .words { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1100px) { .trust { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); } .trust--solo { grid-template-columns: minmax(0, 40rem); justify-content: center; } }
+</style>

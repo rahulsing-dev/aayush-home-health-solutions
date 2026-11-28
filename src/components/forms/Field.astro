@@ -1,5 +1,14 @@
 ---
-/** One labelled form control with an accessible error slot. Handles input, select, textarea. */
+/**
+ * One labelled form control with an accessible hint and error slot. Handles input, select, textarea.
+ * Optional leading `icon`; `counter` shows a live character count (needs `maxlength`);
+ * anything passed in the default slot renders under the control (e.g. quick-pick buttons).
+ * `switchable`: whether the field is required is decided at runtime (a script sets `data-required`
+ * on the wrapper and `required` on the control); both markers are rendered and CSS shows the right one.
+ */
+import Icon from '../ui/Icon.astro';
+import type { IconName } from '../../lib/types';
+
 interface Option { value: string; label?: string; slug?: string; selected?: boolean }
 interface Props {
   id: string;
@@ -11,45 +20,88 @@ interface Props {
   inputmode?: 'text' | 'tel' | 'email' | 'numeric';
   placeholder?: string;
   hint?: string;
+  icon?: IconName;
   options?: Option[];
   rows?: number;
   maxlength?: number;
+  counter?: boolean;
+  switchable?: boolean;
   full?: boolean;
 }
-const { id, name, label, type = 'text', required = false, autocomplete, inputmode, placeholder, hint, options = [], rows = 4, maxlength, full = false } = Astro.props;
+const { id, name, label, type = 'text', required = false, autocomplete, inputmode, placeholder, hint, icon, options = [], rows = 4, maxlength, counter = false, switchable = false, full = false } = Astro.props;
 const describedBy = [hint ? `${id}-hint` : '', `${id}-error`].filter(Boolean).join(' ');
+const hasExtras = Astro.slots.has('default');
 ---
-<div class:list={['field', full && 'field--full']} data-field={name}>
-  <label for={id}>{label}{required ? <span class="req" aria-hidden="true"> *</span> : <span class="opt"> (optional)</span>}</label>
-  {type === 'select' ? (
-    <select {id} {name} required={required} aria-describedby={describedBy}>
-      <option value="">Select…</option>
-      {options.map((o) => <option value={o.value} data-slug={o.slug} selected={o.selected}>{o.label ?? o.value}</option>)}
-    </select>
-  ) : type === 'textarea' ? (
-    <textarea {id} {name} {rows} {maxlength} {placeholder} aria-describedby={describedBy}></textarea>
-  ) : (
-    <input {id} {name} {type} {autocomplete} {inputmode} {placeholder} {maxlength} required={required} aria-describedby={describedBy} />
+<div class:list={['field', full && 'field--full', switchable && 'field--switchable']} data-field={name} data-required={required ? '' : undefined}>
+  <label class="field__label" for={id}>
+    {label}
+    {(required || switchable) && <span class="req" aria-hidden="true">*</span>}
+    {(!required || switchable) && <span class="opt">Optional</span>}
+  </label>
+  <div class:list={['control', icon && 'control--icon', `control--${type}`]}>
+    {icon && <span class="control__icon" aria-hidden="true"><Icon name={icon} size={19} /></span>}
+    {type === 'select' ? (
+      <select {id} {name} required={required} aria-describedby={describedBy}>
+        <option value="">Select…</option>
+        {options.map((o) => <option value={o.value} data-slug={o.slug} selected={o.selected}>{o.label ?? o.value}</option>)}
+      </select>
+    ) : type === 'textarea' ? (
+      <textarea {id} {name} {rows} {maxlength} {placeholder} aria-describedby={describedBy} data-counted={counter ? '' : undefined}></textarea>
+    ) : (
+      <input {id} {name} {type} {autocomplete} {inputmode} {placeholder} {maxlength} required={required} aria-describedby={describedBy} />
+    )}
+  </div>
+  {hasExtras && <div class="field__extras"><slot /></div>}
+  {(hint || counter) && (
+    <div class="field__meta">
+      {hint && <p class="hint" id={`${id}-hint`}>{hint}</p>}
+      {counter && maxlength && <span class="count" aria-hidden="true" data-count={maxlength}>0 / {maxlength}</span>}
+    </div>
   )}
-  {hint && <p class="hint" id={`${id}-hint`}>{hint}</p>}
   <p class="error" id={`${id}-error`} data-error></p>
 </div>
 
 <style>
-  .field { display: grid; gap: 0.4rem; align-content: start; min-width: 0; }
+  .field { display: grid; gap: 0.45rem; align-content: start; min-width: 0; }
   .field--full { grid-column: 1 / -1; }
-  label { font-weight: 600; font-size: 0.9375rem; color: var(--c-ink); }
-  .req { color: var(--c-danger); }
-  .opt { font-weight: 450; color: var(--c-muted); font-size: 0.875rem; }
-  input, select, textarea { width: 100%; min-height: 3rem; padding: 0.7rem 0.9rem; background: #fff; border: 1.5px solid #b9c8d5; border-radius: var(--radius-sm); color: var(--c-ink); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-  textarea { resize: vertical; min-height: 7rem; line-height: 1.5; }
-  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2355687a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.85rem center; padding-right: 2.5rem; }
-  input::placeholder, textarea::placeholder { color: #7a8c9c; }
-  input:hover, select:hover, textarea:hover { border-color: #8aa2b5; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 3px rgb(11 95 165 / 0.25); }
+  .field__label { display: flex; align-items: baseline; gap: 0.4rem; font-weight: 620; font-size: 0.9375rem; color: var(--c-ink); line-height: 1.3; }
+  .req { color: var(--c-accent); font-weight: 700; }
+  .opt { margin-left: auto; font-weight: 500; color: var(--c-muted); font-size: 0.8125rem; }
+  .field--switchable[data-required] .opt, .field--switchable:not([data-required]) .req { display: none; }
+
+  .control { position: relative; }
+  .control__icon { position: absolute; left: 0.95rem; top: 50%; transform: translateY(-50%); display: grid; color: #7b8fa1; pointer-events: none; transition: color var(--dur) var(--ease); }
+  .control:focus-within .control__icon { color: var(--c-primary); }
+
+  input, select, textarea {
+    display: block; width: 100%; min-height: 3.25rem; padding: 0.8rem 1rem;
+    background: var(--c-field-bg); border: 1.5px solid var(--c-field-line); border-radius: var(--radius-field);
+    color: var(--c-ink); font-size: 1rem; line-height: 1.4;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  }
+  .control--icon input, .control--icon select { padding-left: 2.85rem; }
+  textarea { resize: vertical; min-height: 7.5rem; line-height: 1.55; }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2355687a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.75rem; cursor: pointer; }
+  /* Native date picker: keep the browser's calendar, aligned and tinted to match. */
+  input[type='date'] { -webkit-appearance: none; appearance: none; cursor: pointer; }
+  input[type='date']::-webkit-date-and-time-value { text-align: left; }
+  input[type='date']::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.75; padding: 0.3rem; margin-right: -0.25rem; border-radius: 0.4rem; filter: invert(28%) sepia(70%) saturate(1600%) hue-rotate(190deg) brightness(88%); }
+  input[type='date']::-webkit-calendar-picker-indicator:hover { opacity: 1; background: var(--c-primary-soft); }
+  input::placeholder, textarea::placeholder { color: #8495a5; opacity: 1; }
+  input:hover, select:hover, textarea:hover { border-color: var(--c-field-line-hover); }
+  input:focus, select:focus, textarea:focus { outline: none; background: #fff; border-color: var(--c-primary); box-shadow: var(--ring); }
+
   [aria-invalid='true'] { border-color: var(--c-danger); background: #fffafa; }
-  [aria-invalid='true']:focus { box-shadow: 0 0 0 3px rgb(180 35 24 / 0.2); }
-  .hint { font-size: 0.8125rem; color: var(--c-muted); }
-  .error { font-size: 0.875rem; font-weight: 550; color: var(--c-danger); min-height: 0; }
+  [aria-invalid='true']:focus { box-shadow: var(--ring-danger); }
+  .control:has([aria-invalid='true']) .control__icon { color: var(--c-danger); }
+
+  .field__extras { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  :global(html:not(.js)) .field__extras { display: none; }
+  .field__meta { display: flex; align-items: flex-start; gap: 1rem; }
+  .hint { flex: 1; font-size: 0.8125rem; line-height: 1.5; color: var(--c-muted); }
+  .count { margin-left: auto; flex: none; font-size: 0.8125rem; color: var(--c-muted); font-variant-numeric: tabular-nums; }
+  .count[data-near] { color: var(--c-notice); font-weight: 600; }
+  .error { display: flex; gap: 0.4rem; align-items: flex-start; font-size: 0.875rem; font-weight: 550; line-height: 1.45; color: var(--c-danger); }
+  .error::before { content: ''; flex: none; width: 1rem; height: 1rem; margin-top: 0.12rem; background: currentColor; -webkit-mask: var(--icon-alert) center / contain no-repeat; mask: var(--icon-alert) center / contain no-repeat; }
   .error:empty { display: none; }
 </style>

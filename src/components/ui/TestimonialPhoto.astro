@@ -1,0 +1,35 @@
+---
+/**
+ * A testimonial photo: always square with rounded corners, inside a soft gradient border with a
+ * fine white inner line. The photo is cropped to fill the square (object-fit: cover), so it is
+ * never stretched or distorted. Set the size with the `--tphoto-size` custom property (default
+ * 4.5rem) and the corner radius with `--tphoto-radius` (default 1rem).
+ */
+import Media from './Media.astro';
+import type { ImageSlot } from '../../lib/types';
+
+interface Props {
+  photo: ImageSlot;
+  /** The `sizes` attribute: how wide the photo is displayed. */
+  sizes: string;
+  class?: string;
+}
+const { photo, sizes, class: className } = Astro.props;
+---
+<span class:list={['tphoto', className]}>
+  <Media image={{ ...photo, ratio: '1 / 1' }} class="tphoto__img" sizes={sizes} />
+</span>
+
+<style>
+  .tphoto {
+    display: block; flex: none; width: var(--tphoto-size, 4.5rem); padding: 3px;
+    border-radius: var(--tphoto-radius, 1rem);
+    background: linear-gradient(135deg, #cfe3f3 0%, #c7e6e2 55%, #f1dccd 100%);
+    box-shadow: 0 8px 18px -12px rgb(16 42 67 / 0.5);
+  }
+  .tphoto :global(.tphoto__img) {
+    border-radius: calc(var(--tphoto-radius, 1rem) - 3px);
+    outline: 2px solid rgb(255 255 255 / 0.92); outline-offset: -2px;
+  }
+  .tphoto :global(.tphoto__img img) { object-position: 50% 25%; }
+</style>

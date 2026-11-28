@@ -43,7 +43,8 @@ for (const file of htmlFiles) {
   if (h1s !== 1) problems.push(`${rel}: expected exactly one <h1>, found ${h1s}`);
   const seen = new Set();
   for (const m of html.matchAll(/\sid="([^"]+)"/g)) { if (seen.has(m[1])) problems.push(`${rel}: duplicate id "${m[1]}"`); seen.add(m[1]); }
-  for (const m of html.matchAll(/<img\b(?![^>]*\balt=)[^>]*>/g)) problems.push(`${rel}: <img> without alt: ${m[0].slice(0, 60)}`);
+  // A bare `alt` (how Astro writes alt="") is a valid, intentionally empty alt for decorative images.
+  for (const m of html.matchAll(/<img\b(?![^>]*\salt(?:=|[\s>]))[^>]*>/g)) problems.push(`${rel}: <img> without alt: ${m[0].slice(0, 60)}`);
 
   // ---- Links & assets ----
   for (const m of html.matchAll(/\s(?:href|src)="([^"]+)"/g)) {

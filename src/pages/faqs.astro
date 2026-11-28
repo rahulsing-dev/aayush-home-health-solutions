@@ -3,9 +3,217 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
 import FaqList from '../components/sections/FaqList.astro';
 import CtaBand from '../components/sections/CtaBand.astro';
+import Icon from '../components/ui/Icon.astro';
+import { faqCategories, faqs, faqsIn } from '../content/faqs';
+import { contact, telHref, whatsappHref } from '../config/site';
+import { jsonLd } from '../lib/format';
+
+const groups = faqCategories.map((c) => ({ ...c, items: faqsIn(c.id) })).filter((g) => g.items.length > 0);
+const phone = contact.phones[0];
+const askMessage = 'Hello Aayush Home Health, I have a question about your home care services.';
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: [f.a, ...(f.points ?? [])].join(' ') },
+  })),
+};
 ---
-<BaseLayout title="FAQs" description="Answers to common questions about home nursing services from Aayush Home Health Solutions.">
-  <PageHeader title="Frequently Asked Questions" eyebrow="FAQs" intro="Quick answers about our services, staff and how to reach us." crumbs={[{ label: 'FAQs' }]} />
-  <section class="section"><div class="container container--narrow"><FaqList /></div></section>
-  <CtaBand title="Still have a question?" text="Our team is reachable 24/7 and happy to help." />
+<BaseLayout title="FAQs" description="Answers to common questions about home nursing, elder care, booking, charges and family support from Aayush Home Health Solutions in Bangalore.">
+  <script is:inline type="application/ld+json" set:html={jsonLd(schema)} />
+
+  <PageHeader
+    title="Frequently asked questions"
+    eyebrow="FAQs"
+    intro="Clear answers about our services, staff, booking and charges. Can’t find what you need? Our team is reachable 24/7."
+    crumbs={[{ label: 'FAQs' }]}
+  >
+    <div class="search" data-faq-search hidden>
+      <label class="search__label" for="faq-q">Search the FAQs</label>
+      <div class="search__field">
+        <Icon name="search" size={20} class="search__icon" />
+        <input id="faq-q" type="search" inputmode="search" enterkeyhint="search" autocomplete="off" spellcheck="false" placeholder="Try “charges”, “dementia” or “start”" aria-describedby="faq-status" />
+      </div>
+    </div>
+  </PageHeader>
+
+  <section class="section faq-page" aria-label="Questions and answers">
+    <div class="container faq-layout">
+      <div class="faq-side">
+        <nav class="topics" aria-label="FAQ topics">
+          <p class="topics__title">Topics</p>
+          <ul role="list" class="topics__list">
+            {groups.map((g) => (
+              <li data-nav={g.id}>
+                <a href={`#${g.id}`} class:list={['topic', `tone-${g.tone}`]}>
+                  <span class="topic__icon"><Icon name={g.icon} size={20} /></span>
+                  <span class="topic__label">{g.title}</span>
+                  <span class="topic__count">{g.items.length}<span class="sr-only"> questions</span></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div class="mini">
+          <p class="mini__title">Can’t find your answer?</p>
+          <a class="mini__link" href={telHref(phone.tel)}><Icon name="phone" size={18} /> <span class="sr-only">Call </span>{phone.display}</a>
+          <a class="mini__link" href={whatsappHref(askMessage)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> WhatsApp us<span class="sr-only"> (opens WhatsApp)</span></a>
+          <p class="mini__note"><span class="live-dot" aria-hidden="true"></span> {contact.availability}</p>
+        </div>
+      </div>
+
+      <div class="faq-main">
+        <p id="faq-status" class="status" role="status"></p>
+        {groups.map((g) => (
+          <section class:list={['group', `tone-${g.tone}`]} id={g.id} aria-labelledby={`${g.id}-h`} data-group={g.id}>
+            <header class="group__head">
+              <span class="group__icon"><Icon name={g.icon} size={24} /></span>
+              <div>
+                <h2 id={`${g.id}-h`}>{g.title}</h2>
+                <p>{g.blurb}</p>
+              </div>
+            </header>
+            <FaqList items={g.items} />
+          </section>
+        ))}
+
+        <div class="empty" data-faq-empty hidden>
+          <span class="empty__icon"><Icon name="search" size={26} /></span>
+          <p class="empty__title">No questions match your search</p>
+          <p>Try a different word, or ask us directly. We are reachable 24/7.</p>
+          <div class="btn-row">
+            <a class="btn btn--primary" href={telHref(phone.tel)}><Icon name="phone" size={18} /> <span class="sr-only">Call </span>{phone.display}</a>
+            <a class="btn btn--whatsapp" href={whatsappHref(askMessage)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Ask on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand title="Still have a question?" text="Our team is reachable 24/7 and happy to help." whatsapp={{ label: 'WhatsApp', message: askMessage }} />
 </BaseLayout>
+
+<script>
+  const items = [...document.querySelectorAll<HTMLDetailsElement>('.faq-main details[data-faq]')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-group]')];
+  const navItems = new Map([...document.querySelectorAll<HTMLElement>('[data-nav]')].map((li) => [li.dataset.nav!, li]));
+
+  // Open a question linked to directly, e.g. /faqs#faq-how-quickly-can-care-start.
+  const openFromHash = () => {
+    const el = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (el instanceof HTMLDetailsElement) el.open = true;
+  };
+  openFromHash();
+  window.addEventListener('hashchange', openFromHash);
+
+  // Search (progressive enhancement: the box stays hidden without JS, and every question is listed).
+  const box = document.querySelector<HTMLElement>('[data-faq-search]');
+  const input = document.querySelector<HTMLInputElement>('#faq-q');
+  const status = document.querySelector<HTMLElement>('#faq-status');
+  const empty = document.querySelector<HTMLElement>('[data-faq-empty]');
+  if (box && input && status && empty) {
+    box.hidden = false;
+    // Lower-case, without accents or apostrophes, so "alzheimers" finds "Alzheimer’s".
+    const norm = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ'’]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const index = items.map((d) => ({ d, text: norm(d.textContent ?? '') }));
+    const run = () => {
+      const terms = norm(input.value).split(' ').filter(Boolean);
+      let total = 0;
+      for (const { d, text } of index) {
+        const match = terms.every((t) => text.includes(t));
+        d.hidden = !match;
+        if (match) total++;
+      }
+      for (const g of groups) {
+        const visible = g.querySelector('details:not([hidden])') !== null;
+        g.hidden = !visible;
+        const li = navItems.get(g.dataset.group!);
+        if (li) li.hidden = !visible;
+      }
+      empty.hidden = total > 0;
+      status.textContent = terms.length ? `${total} ${total === 1 ? 'question matches' : 'questions match'} “${input.value.trim()}”` : '';
+      status.classList.toggle('is-shown', terms.length > 0);
+    };
+    input.addEventListener('input', run);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Escape' && input.value) { input.value = ''; run(); } });
+  }
+
+  // Highlight the topic being read in the desktop sidebar.
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          navItems.forEach((li) => li.classList.remove('is-active'));
+          navItems.get((e.target as HTMLElement).dataset.group!)?.classList.add('is-active');
+        }
+      },
+      { rootMargin: '-25% 0px -65% 0px' },
+    );
+    groups.forEach((g) => io.observe(g));
+  }
+</script>
+
+<style>
+  /* Search box in the page header. */
+  .search { display: grid; gap: 0.5rem; max-width: 36rem; margin-top: 0.75rem; }
+  .search__label { font-weight: 650; color: var(--c-ink); }
+  .search__field { position: relative; }
+  .search__field :global(.search__icon) { position: absolute; left: 1.1rem; top: 50%; transform: translateY(-50%); color: var(--c-muted); pointer-events: none; }
+  .search input { width: 100%; min-height: 3.5rem; padding: 0.75rem 1.25rem 0.75rem 3.1rem; border: 1.5px solid var(--c-line); border-radius: 999px; background: #fff; font-size: var(--fs-400); color: var(--c-ink); box-shadow: var(--shadow-md); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .search input::placeholder { color: #6b7d8e; }
+  .search input:hover { border-color: var(--c-primary-tint); }
+  .search input:focus { outline: none; border-color: var(--c-primary); box-shadow: 0 0 0 4px rgb(11 95 165 / 0.18), var(--shadow-md); }
+
+  .faq-page { padding-top: clamp(2rem, 1.5rem + 2.5vw, 4rem); }
+  .faq-layout { display: grid; gap: 2rem; }
+  .faq-main { display: grid; gap: clamp(2.5rem, 2rem + 2vw, 3.5rem); min-width: 0; }
+
+  /* Topics: a 2/3-column grid of shortcuts on phones and tablets, a sticky list beside the questions on desktop. */
+  .topics__title { display: none; }
+  .topics__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .topic { display: flex; align-items: center; gap: 0.65rem; height: 100%; min-height: 3.5rem; padding: 0.65rem 0.75rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); color: var(--c-ink); text-decoration: none; transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .topic:hover { border-color: var(--tone); color: var(--c-ink); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .topic__icon { flex: none; display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 0.7rem; background: var(--tone-soft); color: var(--tone); transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .topic__label { flex: 1; min-width: 0; font-weight: 620; font-size: 0.9375rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .topic__count { flex: none; display: none; min-width: 1.75rem; height: 1.75rem; padding-inline: 0.4rem; place-items: center; border-radius: 999px; background: var(--c-bg-soft); color: var(--c-muted); font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  @media (min-width: 640px) { .topics__list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .topic__count { display: inline-grid; } }
+
+  .mini { display: none; }
+
+  @media (min-width: 1024px) {
+    .faq-layout { grid-template-columns: 17.5rem minmax(0, 1fr); gap: 3.5rem; align-items: start; }
+    .faq-side { position: sticky; top: calc(var(--header-h) + 1.5rem); display: grid; gap: 1.25rem; }
+    .topics__title { display: block; padding: 0 0.85rem 0.6rem; font-size: var(--fs-300); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-secondary); }
+    .topics__list { grid-template-columns: 1fr; gap: 0.2rem; }
+    .topic { min-height: 3rem; padding: 0.45rem 0.6rem; background: transparent; border-color: transparent; box-shadow: none; }
+    .topic:hover { transform: none; box-shadow: none; background: #fff; border-color: var(--c-line); }
+    .is-active .topic { background: #fff; border-color: var(--c-line); box-shadow: var(--shadow-sm); }
+    .is-active .topic__icon { background: var(--tone); color: #fff; }
+    .topic__icon { width: 2.1rem; height: 2.1rem; border-radius: 0.6rem; }
+
+    .mini { display: grid; gap: 0.35rem; padding: 1.15rem; border-radius: var(--radius-lg); background: linear-gradient(160deg, var(--c-primary-soft), #fff 75%); border: 1px solid var(--c-line); }
+    .mini__title { margin-bottom: 0.25rem; font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--c-ink); }
+    .mini__link { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 2.75rem; font-weight: 650; text-decoration: none; }
+    .mini__link:hover { text-decoration: underline; }
+    .mini__note { display: flex; align-items: center; gap: 0.55rem; color: var(--c-muted); font-size: var(--fs-300); font-weight: 600; }
+  }
+
+  .status { display: none; font-weight: 650; color: var(--c-ink); }
+  .status.is-shown { display: block; }
+  .faq-main:has(.status.is-shown) { gap: 1.5rem; }
+
+  .group { display: grid; gap: 1.1rem; scroll-margin-top: calc(var(--header-h) + 1.25rem); }
+  .group__head { display: flex; align-items: flex-start; gap: 0.9rem; }
+  .group__icon { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: var(--radius-md); background: var(--tone-soft); color: var(--tone); }
+  .group__head h2 { font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem); }
+  .group__head p { margin-top: 0.2rem; color: var(--c-muted); }
+
+  .empty { display: grid; gap: 0.6rem; justify-items: center; padding: clamp(1.75rem, 1.25rem + 2vw, 2.75rem); text-align: center; border: 1.5px dashed var(--c-line); border-radius: var(--radius-lg); background: var(--c-bg-soft); }
+  .empty__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: #fff; color: var(--c-primary); box-shadow: var(--shadow-sm); }
+  .empty__title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; color: var(--c-ink); }
+  .empty p { color: var(--c-muted); }
+  .empty .btn-row { justify-content: center; margin-top: 0.5rem; }
+</style>

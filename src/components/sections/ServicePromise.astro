@@ -1,0 +1,47 @@
+---
+/** "The Aayush standard": what comes with every service. Points come from verified content (pages.ts). */
+import Media from '../ui/Media.astro';
+import Icon from '../ui/Icon.astro';
+import { servicePromise as p } from '../../content/pages';
+import { contact } from '../../config/site';
+---
+<div class="promise">
+  <div class="promise__media reveal">
+    <Media image={p.image} sizes="(min-width: 960px) 440px, 100vw" />
+    <p class="promise__badge"><span class="promise__badge-icon"><Icon name="clock" size={20} /></span><span><strong>{contact.availability}</strong> by phone, WhatsApp and email</span></p>
+  </div>
+  <div class="promise__copy reveal" style="--reveal-delay:100ms">
+    <p class="eyebrow">{p.eyebrow}</p>
+    <h2 id="promise-h">{p.title}</h2>
+    <p class="lead">{p.intro}</p>
+    <ul role="list" class="promise__list">
+      {p.points.map((pt) => (
+        <li>
+          <span class="promise__icon"><Icon name={pt.icon} size={22} /></span>
+          <span><strong>{pt.title}</strong>{pt.text}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+</div>
+
+<style>
+  .promise { display: grid; gap: 2.5rem; align-items: center; }
+  .promise__media { position: relative; max-width: 30rem; }
+  .promise__media :global(.media) { box-shadow: var(--shadow-lg); }
+  .promise__badge { position: absolute; left: 0.85rem; right: 0.85rem; bottom: 0.85rem; display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; background: rgb(255 255 255 / 0.95); border-radius: var(--radius-md); box-shadow: var(--shadow-md); color: var(--c-muted); line-height: 1.35; }
+  .promise__badge strong { display: block; color: var(--c-ink); }
+  .promise__badge-icon { flex: none; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--c-success-soft); color: var(--c-success); }
+  .promise__copy { display: grid; gap: 1rem; justify-items: start; }
+  .promise__list { display: grid; gap: 1.1rem; margin-top: 0.75rem; }
+  .promise__list li { display: flex; gap: 0.9rem; align-items: flex-start; }
+  .promise__list strong { display: block; color: var(--c-ink); font-size: 1.0625rem; }
+  .promise__list li > span:last-child { color: var(--c-muted); }
+  .promise__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); background: #fff; color: var(--c-secondary); box-shadow: var(--shadow-sm); }
+  @media (min-width: 640px) { .promise__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem 1.75rem; } }
+  @media (min-width: 960px) {
+    .promise { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 4rem; }
+    .promise__media { max-width: none; }
+    .promise__badge { left: auto; right: -1.25rem; bottom: 1.75rem; max-width: 16rem; }
+  }
+</style>

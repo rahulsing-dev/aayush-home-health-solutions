@@ -3,27 +3,65 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
 import ContactForms from '../components/forms/ContactForms.astro';
 import OfficeCards from '../components/sections/OfficeCards.astro';
-import SectionHead from '../components/ui/SectionHead.astro';
 import Icon from '../components/ui/Icon.astro';
-import { contact, forms, offices, telHref } from '../config/site';
----
-<BaseLayout title="Contact Us" description="Make an enquiry or book a home nursing service with Aayush Home Health Solutions. We are reachable 24/7.">
-  <PageHeader title="Contact Us" eyebrow="We're here to help" intro="Make an enquiry or book a service. For anything urgent, please call us directly." crumbs={[{ label: 'Contact Us' }]} />
+import { contact, forms, offices, telHref, whatsappHref } from '../config/site';
+import { services } from '../content/services';
 
-  <section class="section">
+const [primaryPhone, ...otherPhones] = contact.phones;
+const nextSteps = [
+  { title: 'We receive your request', text: 'Your details go straight to our team’s inbox.' },
+  { title: 'We call you back', text: 'To understand the care needed and answer your questions.' },
+  { title: 'Care is arranged', text: 'We agree the right support and a start date with you before anything begins.' },
+];
+---
+<BaseLayout title="Contact Us" description="Make an enquiry or book a home nursing service with Aayush Home Health Solutions in Bangalore. We are reachable 24/7 by phone, WhatsApp and email.">
+  <PageHeader title="Contact Us" eyebrow="We're here to help" intro="Book a service or ask us anything about care at home. For anything urgent, please call us directly." crumbs={[{ label: 'Contact Us' }]}>
+    <ul role="list" class="facts">
+      <li><Icon name="clock" size={18} /> Reachable 24/7</li>
+      <li><Icon name="heart" size={18} /> {services.length} home care services</li>
+      <li><Icon name="map-pin" size={18} /> Based in {offices[0].locality}</li>
+    </ul>
+  </PageHeader>
+
+  <section class="section contact" aria-label="Contact form and details">
     <div class="container layout">
-      <ContactForms />
-      <aside class="direct" aria-labelledby="direct-h">
-        <h2 id="direct-h">Prefer to talk?</h2>
-        <p>{contact.availability}.</p>
-        <ul role="list">
-          {contact.phones.map((p, i) => (
-            <li><span class="direct__icon"><Icon name="phone" size={20} /></span><span><span class="direct__label">{i === 0 ? 'Call us' : 'Or call'}</span><a href={telHref(p.tel)}>{p.display}</a></span></li>
-          ))}
-          <li><span class="direct__icon"><Icon name="mail" size={20} /></span><span><span class="direct__label">Email us</span><a href={`mailto:${contact.email}`}>{contact.email}</a></span></li>
-        </ul>
+      <div class="layout__form">
+        <ContactForms />
+      </div>
+
+      <aside class="side" aria-label="Other ways to reach us">
+        <div class="talk">
+          <p class="talk__pill"><span class="live-dot" aria-hidden="true"></span> {contact.availability}</p>
+          <h2 class="talk__title">Prefer to talk?</h2>
+          <p class="talk__text">Speak to our team now about care for your loved one.</p>
+          <a class="talk__call" href={telHref(primaryPhone.tel)} data-contact="call">
+            <span class="talk__call-icon" aria-hidden="true"><Icon name="phone" size={22} /></span>
+            <span><span class="talk__call-label">Call us</span><span class="talk__call-num">{primaryPhone.display}</span></span>
+          </a>
+          <a class="btn btn--whatsapp talk__wa" href={whatsappHref()} target="_blank" rel="noopener noreferrer" data-contact="whatsapp">
+            <Icon name="whatsapp" size={20} /> WhatsApp {contact.whatsapp.display}<span class="sr-only"> (opens WhatsApp)</span>
+          </a>
+          <ul role="list" class="talk__more">
+            {otherPhones.map((p) => (
+              <li><Icon name="phone" size={18} /><span>Or call <a href={telHref(p.tel)}>{p.display}</a></span></li>
+            ))}
+            <li><Icon name="mail" size={18} /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
+          </ul>
+        </div>
+
+        <div class="next">
+          <h2 class="next__title">What happens next</h2>
+          <ol role="list" class="next__list">
+            {nextSteps.map((s, i) => (
+              <li><span class="next__num" aria-hidden="true">{i + 1}</span><span><strong>{s.title}</strong><span>{s.text}</span></span></li>
+            ))}
+          </ol>
+        </div>
+
+        <p class="privacy"><Icon name="shield-check" size={20} /><span>We use your details only to respond to your request. Please don’t share medical records in the form. <a href="/privacy-policy">Privacy Policy</a></span></p>
+
         {!forms.endpoint && (
-          <p class="direct__demo" data-draft-flag><Icon name="info" size={18} /> <span><strong>Setup note:</strong> the online forms are running in demo mode until a delivery endpoint is configured. Please use phone or email for now.</span></p>
+          <p class="demo"><Icon name="info" size={18} /> <span><strong>Online requests are not being received yet.</strong> Please call, WhatsApp or email us instead, and we will be glad to help.</span></p>
         )}
       </aside>
     </div>
@@ -31,23 +69,58 @@ import { contact, forms, offices, telHref } from '../config/site';
 
   <section class="section section--soft" aria-labelledby="offices-h">
     <div class="container">
-      <SectionHead id="offices-h" eyebrow="Visit us" title={offices.length > 1 ? 'Our offices' : 'Our office'} />
-      <OfficeCards />
+      <OfficeCards id="offices-h" />
     </div>
   </section>
 </BaseLayout>
 
 <style>
-  .layout { display: grid; gap: 2rem; align-items: start; }
-  @media (min-width: 1000px) { .layout { grid-template-columns: 1fr 22.5rem; gap: 2.5rem; } .direct { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
-  .direct { display: grid; gap: 1rem; padding: 1.75rem 1.5rem; background: var(--c-primary-soft); border-radius: var(--radius-lg); }
-  .direct h2 { font-size: 1.5rem; }
-  .direct ul { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 1.1rem; }
-  .direct li { display: flex; gap: 0.85rem; align-items: center; }
-  .direct li > span:last-child { display: grid; line-height: 1.35; min-width: 0; }
-  .direct a { font-weight: 650; font-size: 0.9375rem; overflow-wrap: anywhere; }
-  .direct__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: #fff; color: var(--c-primary); }
-  .direct__label { font-size: 0.8125rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
-  .direct__demo { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.9rem 1rem; background: var(--c-draft-soft); border: 1px solid #f0d58a; border-radius: var(--radius-sm); color: #5c3d00; font-size: 0.875rem; }
-  .direct__demo :global(svg) { flex: none; margin-top: 0.15rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+  .facts li { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.85rem; border-radius: 999px; background: rgb(255 255 255 / 0.75); border: 1px solid var(--c-primary-tint); color: var(--c-ink); font-size: var(--fs-300); font-weight: 600; }
+  .facts li :global(svg) { color: var(--c-primary); }
+
+  .contact { background: linear-gradient(180deg, #fff 0, var(--c-bg-soft) 100%); padding-top: clamp(2rem, 1.5rem + 2vw, 3.5rem); }
+  .layout { display: grid; gap: 1.75rem; align-items: start; }
+  .layout__form { min-width: 0; }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: minmax(0, 1fr) 22.5rem; gap: 2.5rem; }
+    .side { position: sticky; top: calc(var(--header-h) + 1.5rem); }
+  }
+  .side { display: grid; gap: 1.25rem; }
+
+  /* "Prefer to talk?" */
+  .talk { position: relative; overflow: hidden; display: grid; gap: 0.9rem; padding: 1.75rem 1.5rem; border-radius: 1.5rem; color: #dbe7f2; background: radial-gradient(22rem 14rem at 110% -10%, rgb(14 124 123 / 0.55), transparent 70%), linear-gradient(160deg, var(--c-navy-2), var(--c-navy)); box-shadow: var(--shadow-lg); }
+  .talk__pill { justify-self: start; display: inline-flex; align-items: center; gap: 0.55rem; padding: 0.3rem 0.8rem 0.3rem 0.65rem; border-radius: 999px; background: rgb(255 255 255 / 0.1); border: 1px solid rgb(255 255 255 / 0.2); color: #fff; font-size: 0.8125rem; font-weight: 650; }
+  .talk__pill .live-dot { background: #6ee7b7; }
+  .talk__title { color: #fff; font-size: 1.6rem; }
+  .talk__text { font-size: 0.9375rem; }
+  .talk__call { display: flex; align-items: center; gap: 0.9rem; padding: 0.8rem 1rem; border-radius: 1rem; background: #fff; color: var(--c-ink); text-decoration: none; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .talk__call:hover { color: var(--c-ink); transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgb(0 0 0 / 0.5); }
+  .talk__call-icon { flex: none; display: grid; place-items: center; width: 2.9rem; height: 2.9rem; border-radius: 50%; background: var(--c-primary); color: #fff; }
+  .talk__call > span:last-child { display: grid; line-height: 1.25; }
+  .talk__call-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c-muted); }
+  .talk__call-num { font-size: 1.2rem; font-weight: 700; color: var(--c-primary-strong); }
+  .talk__wa { width: 100%; }
+  .talk__more { display: grid; gap: 0.6rem; padding-top: 0.9rem; border-top: 1px solid rgb(255 255 255 / 0.15); font-size: 0.9375rem; }
+  .talk__more li { display: flex; align-items: center; gap: 0.6rem; min-width: 0; min-height: 2.75rem; }
+  .talk__more li :global(svg) { flex: none; color: #8fb8dc; }
+  .talk__more a { display: inline-flex; align-items: center; min-height: 2.75rem; color: #fff; font-weight: 600; text-decoration-color: rgb(255 255 255 / 0.4); }
+  .talk__more a:hover { color: #fff; text-decoration-color: #fff; }
+  .talk__more a[href^='mailto:'] { font-size: 0.875rem; }
+
+  /* What happens next */
+  .next { padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: 1.25rem; }
+  .next__title { font-size: 1.25rem; margin-bottom: 1rem; }
+  .next__list { display: grid; gap: 1rem; position: relative; }
+  .next__list li { position: relative; display: flex; gap: 0.85rem; }
+  .next__list li:not(:last-child)::after { content: ''; position: absolute; left: 0.95rem; top: 2.1rem; bottom: -0.9rem; width: 2px; background: var(--c-primary-tint); }
+  .next__num { flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary-strong); font-weight: 700; font-size: 0.875rem; }
+  .next__list li > span:last-child { display: grid; gap: 0.1rem; font-size: 0.9375rem; line-height: 1.45; color: var(--c-muted); }
+  .next__list strong { color: var(--c-ink); font-weight: 650; }
+
+  .privacy { display: flex; gap: 0.7rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: 1rem; background: var(--c-secondary-soft); color: #0a4f4e; font-size: 0.875rem; line-height: 1.5; }
+  .privacy :global(svg) { flex: none; color: var(--c-secondary); }
+  .privacy a { color: inherit; font-weight: 650; }
+  .demo { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.9rem 1rem; background: var(--c-notice-soft); border: 1px solid #f0d58a; border-radius: 1rem; color: #5c3d00; font-size: 0.875rem; }
+  .demo :global(svg) { flex: none; margin-top: 0.15rem; }
 </style>

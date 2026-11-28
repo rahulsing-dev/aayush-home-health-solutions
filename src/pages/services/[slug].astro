@@ -4,20 +4,25 @@ import PageHeader from '../../components/layout/PageHeader.astro';
 import Media from '../../components/ui/Media.astro';
 import Icon from '../../components/ui/Icon.astro';
 import SectionHead from '../../components/ui/SectionHead.astro';
+import ServiceTile from '../../components/ui/ServiceTile.astro';
 import Process from '../../components/sections/Process.astro';
 import CtaBand from '../../components/sections/CtaBand.astro';
-import { services } from '../../content/services';
-import { contact, telHref } from '../../config/site';
+import { enquireHref, getCategory, services } from '../../content/services';
+import { contact, telHref, whatsappHref } from '../../config/site';
 
 export function getStaticPaths() {
   return services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 const { service } = Astro.props;
+const category = getCategory(service.category);
+const tone = category?.tone ?? 'blue';
+// Related: same group first, then the rest, up to three.
 const others = services.filter((s) => s.slug !== service.slug);
+const related = [...others.filter((s) => s.category === service.category), ...others.filter((s) => s.category !== service.category)].slice(0, 3);
 const phone = contact.phones[0];
 ---
-<BaseLayout title={service.title} description={service.summary}>
-  <PageHeader title={service.title} eyebrow="Home nursing" intro={service.summary} crumbs={[{ label: 'Services', href: '/services' }, { label: service.title }]} />
+<BaseLayout title={`${service.title} in Bangalore`} description={service.summary}>
+  <PageHeader title={service.title} eyebrow={category?.title ?? 'Our services'} intro={service.summary} crumbs={[{ label: 'Services', href: '/services' }, { label: service.title }]} />
 
   <section class="section">
     <div class="container detail">
@@ -33,40 +38,40 @@ const phone = contact.phones[0];
         </ul>
       </div>
       <aside class="detail__aside" aria-label={`Enquire about ${service.title}`}>
-        <Media image={service.image} eager />
+        {service.image.src ? (
+          <Media image={service.image} eager sizes="(min-width: 960px) 420px, 100vw" />
+        ) : (
+          <div class:list={['visual', `tone-${tone}`]} aria-hidden="true">
+            <span class="visual__icon"><Icon name={service.icon} size={56} /></span>
+          </div>
+        )}
         <div class="enq">
           <h2>Enquire about {service.title}</h2>
           <p>Tell us about your situation and we will help you with the next step.</p>
-          <a class="btn btn--primary" href={`/contact?service=${service.slug}`}>Make an Enquiry</a>
+          <a class="btn btn--primary" href={enquireHref(service.slug)}>Make an Enquiry</a>
           <a class="btn btn--outline" href={telHref(phone.tel)}><Icon name="phone" size={18} /> {phone.display}</a>
+          <a class="btn btn--whatsapp" href={whatsappHref(`Hello Aayush Home Health, I would like to know more about ${service.title}.`)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Chat on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
           <p class="enq__note"><Icon name="clock" size={16} /> {contact.availability}</p>
         </div>
       </aside>
     </div>
   </section>
 
-  <section class="section section--soft"><div class="container"><Process /></div></section>
+  <Process soft />
 
-  {others.length > 0 && (
-    <section class="section" aria-labelledby="other-h">
+  {related.length > 0 && (
+    <section class="section" aria-labelledby="related-h">
       <div class="container">
-        <SectionHead id="other-h" title="Our other services" />
-        <ul role="list" class="others">
-          {others.map((o) => (
-            <li>
-              <a href={`/services/${o.slug}`} class="other">
-                <span class="other__icon"><Icon name={o.icon} size={24} /></span>
-                <span class="other__text"><strong>{o.title}</strong><span>{o.summary}</span></span>
-                <Icon name="arrow-right" size={20} />
-              </a>
-            </li>
-          ))}
+        <SectionHead id="related-h" eyebrow="Explore more" title="Related services" />
+        <ul role="list" class="related">
+          {related.map((s, i) => <li class="reveal" style={`--reveal-delay:${i * 70}ms`}><ServiceTile service={s} /></li>)}
         </ul>
+        <p class="more"><a class="link-arrow" href="/services">View all {services.length} services <Icon name="arrow-right" size={18} /></a></p>
       </div>
     </section>
   )}
 
-  <CtaBand title={`Ready to talk about ${service.title}?`} text="We are reachable 24/7 by phone and email." />
+  <CtaBand title={`Ready to talk about ${service.title}?`} text="We are reachable 24/7 by phone, WhatsApp and email." />
 </BaseLayout>
 
 <style>
@@ -77,15 +82,19 @@ const phone = contact.phones[0];
   .ticks li { display: flex; gap: 0.85rem; align-items: flex-start; padding: 1rem 1.15rem; background: var(--c-bg-soft); border-radius: var(--radius-md); }
   .ticks__icon { flex: none; display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--c-secondary); color: #fff; margin-top: 0.1rem; }
   .detail__aside { display: grid; gap: 1.25rem; }
+  .visual { position: relative; overflow: hidden; display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: var(--radius-lg); background: radial-gradient(circle at 30% 20%, #fff 0, transparent 55%), var(--tone-soft); }
+  .visual::before, .visual::after { content: ''; position: absolute; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tone) 18%, transparent); }
+  .visual::before { width: 13rem; height: 13rem; }
+  .visual::after { width: 20rem; height: 20rem; }
+  .visual__icon { position: relative; display: grid; place-items: center; width: 7rem; height: 7rem; border-radius: 2rem; background: var(--tone); color: #fff; box-shadow: 0 18px 36px -14px color-mix(in srgb, var(--tone) 75%, transparent); }
   .enq { display: grid; gap: 0.85rem; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
   .enq h2 { font-size: 1.375rem; }
   .enq p { color: var(--c-muted); }
   .enq__note { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
-  @media (min-width: 960px) { .detail { grid-template-columns: 1.25fr 0.75fr; gap: 4rem; } .detail__aside { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
-  .others { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
-  .other { display: flex; align-items: center; gap: 1.25rem; padding: 1.35rem 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); text-decoration: none; color: var(--c-primary); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
-  .other:hover { border-color: var(--c-primary-tint); box-shadow: var(--shadow-md); }
-  .other__icon { flex: none; display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: var(--radius-md); background: var(--c-primary-soft); }
-  .other__text { display: grid; gap: 0.2rem; flex: 1; color: var(--c-muted); }
-  .other__text strong { color: var(--c-ink); font-size: 1.125rem; }
+  @media (min-width: 960px) { .detail { grid-template-columns: 1.25fr 0.75fr; gap: 4rem; } .detail__aside { position: sticky; top: calc(var(--header-h) + 1.5rem); } .visual { aspect-ratio: 4 / 3; } }
+  .related { display: grid; gap: 1rem; }
+  .related > li { min-width: 0; }
+  @media (min-width: 640px) { .related { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; } }
+  @media (min-width: 1000px) { .related { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .more { margin-top: 2rem; text-align: center; }
 </style>

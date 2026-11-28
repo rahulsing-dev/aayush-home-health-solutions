@@ -1,0 +1,52 @@
+---
+/**
+ * Every service, grouped by category (content/services.ts). On wide screens each group's heading
+ * stays in view beside its cards. Groups with no services are skipped. Each group is anchored by
+ * its id, so /services#<category-id> jumps straight to it.
+ */
+import Icon from '../ui/Icon.astro';
+import ServiceTile from '../ui/ServiceTile.astro';
+import { serviceCategories, servicesIn } from '../../content/services';
+
+const groups = serviceCategories.map((c) => ({ ...c, items: servicesIn(c.id) })).filter((g) => g.items.length > 0);
+---
+<div class="cats">
+  {groups.map((g, gi) => (
+    <section id={g.id} class:list={['cat', `tone-${g.tone}`]} aria-labelledby={`${g.id}-h`}>
+      <div class="cat__head reveal">
+        <span class="cat__icon"><Icon name={g.icon} size={28} /></span>
+        <p class="cat__count"><span>{String(gi + 1).padStart(2, '0')}</span> {g.items.length} {g.items.length === 1 ? 'service' : 'services'}</p>
+        <h2 id={`${g.id}-h`}>{g.title}</h2>
+        <p class="cat__blurb">{g.blurb}</p>
+      </div>
+      <ul role="list" class="cat__grid">
+        {g.items.map((s, i) => <li class="reveal" style={`--reveal-delay:${i * 70}ms`}><ServiceTile service={s} /></li>)}
+      </ul>
+    </section>
+  ))}
+</div>
+
+<style>
+  .cats { display: grid; }
+  .cat { display: grid; gap: 1.75rem; padding-block: clamp(2.25rem, 1.75rem + 2vw, 3.5rem); scroll-margin-top: var(--header-h); }
+  .cat + .cat { border-top: 1px solid var(--c-line); }
+  .cat:first-child { padding-top: 0; }
+  .cat:last-child { padding-bottom: 0; }
+  .cat__head { display: grid; gap: 0.65rem; justify-items: start; align-content: start; max-width: 36rem; }
+  .cat__icon { display: grid; place-items: center; width: 3.75rem; height: 3.75rem; border-radius: 1.1rem; background: var(--tone); color: #fff; box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--tone) 70%, transparent); }
+  .cat__count { display: inline-flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; font-size: var(--fs-300); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tone); }
+  .cat__count span { font-family: var(--font-display); font-size: 1rem; letter-spacing: 0; padding-right: 0.6rem; border-right: 2px solid var(--tone-soft); }
+  .cat h2 { font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.25rem); }
+  .cat__blurb { color: var(--c-muted); font-size: var(--fs-500); }
+  .cat__grid { display: grid; gap: 1rem; }
+  .cat__grid > li { min-width: 0; }
+  @media (min-width: 640px) {
+    .cat__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+    /* An odd last card takes the full row instead of leaving a gap. */
+    .cat__grid > li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1000px) {
+    .cat { grid-template-columns: minmax(0, 0.75fr) minmax(0, 2fr); gap: 3.5rem; }
+    .cat__head { position: sticky; top: calc(var(--header-h) + 2rem); }
+  }
+</style>

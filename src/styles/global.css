@@ -9,6 +9,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 h1, h2, h3, h4, p, figure, blockquote, dl, dd { margin: 0; }
 ul[role='list'], ol[role='list'] { list-style: none; padding: 0; margin: 0; }
 a { color: var(--c-primary); text-underline-offset: 0.2em; }
+/* Long email addresses must wrap on narrow phones instead of widening the page. */
+a[href^='mailto:'] { overflow-wrap: anywhere; min-width: 0; }
 a:hover { color: var(--c-primary-strong); }
 [hidden] { display: none !important; }
 
@@ -20,7 +22,6 @@ h3 { font-size: var(--fs-h3); line-height: 1.25; }
 h4 { font-family: var(--font-body); font-size: var(--fs-500); font-weight: 650; color: var(--c-ink); line-height: 1.3; }
 p { text-wrap: pretty; }
 .lead { font-size: var(--fs-500); line-height: 1.7; color: var(--c-text); }
-.muted { color: var(--c-muted); }
 .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; font-size: var(--fs-300); font-weight: 650; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-secondary); }
 .eyebrow::before { content: ''; width: 1.5rem; height: 2px; background: currentColor; border-radius: 2px; }
 
@@ -36,13 +37,10 @@ p { text-wrap: pretty; }
 .section { padding-block: var(--section-y); }
 .section--soft { background: var(--c-bg-soft); }
 .section--warm { background: var(--c-bg-warm); }
-.section--dark { background: var(--c-navy); color: #dbe6f0; }
-.section--dark h2, .section--dark h3 { color: #fff; }
 .section-head { display: grid; gap: var(--space-3); max-width: 44rem; margin-bottom: clamp(2rem, 1.5rem + 2vw, 3.5rem); }
 .section-head--center { margin-inline: auto; text-align: center; justify-items: center; }
-.section-head p { color: var(--c-muted); font-size: var(--fs-500); }
-.stack > * + * { margin-top: var(--space-4); }
-.stack-lg > * + * { margin-top: var(--space-5); }
+/* `:not(.eyebrow)`: the eyebrow keeps its own small teal style, the same as everywhere else on the site. */
+.section-head p:not(.eyebrow) { color: var(--c-muted); font-size: var(--fs-500); }
 
 /* ---------- Buttons ---------- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 3rem; padding: 0.7rem 1.5rem; border: 2px solid transparent; border-radius: 999px; font-weight: 650; font-size: var(--fs-400); line-height: 1.2; text-decoration: none; cursor: pointer; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
@@ -55,12 +53,37 @@ p { text-wrap: pretty; }
 .btn--light:hover { background: var(--c-primary-soft); color: var(--c-primary-strong); }
 .btn--ghost-light { border-color: rgb(255 255 255 / 0.55); color: #fff; }
 .btn--ghost-light:hover { background: rgb(255 255 255 / 0.12); color: #fff; border-color: #fff; }
+.btn--whatsapp { background: var(--c-whatsapp); color: #fff; }
+.btn--whatsapp:hover { background: #0b6249; color: #fff; box-shadow: var(--shadow-md); }
 .btn--sm { min-height: 2.5rem; padding: 0.45rem 1.1rem; font-size: var(--fs-300); }
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.65; cursor: not-allowed; }
-.link-arrow { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 650; text-decoration: none; }
+.link-arrow { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.75rem; font-weight: 650; text-decoration: none; }
 .link-arrow svg { transition: transform var(--dur) var(--ease); }
 .link-arrow:hover svg { transform: translateX(4px); }
 .btn-row { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* ---------- Breadcrumbs (PageHeader and the career hero) ---------- */
+.crumbs ol { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; list-style: none; margin: 0; padding: 0; font-size: var(--fs-300); color: var(--c-muted); }
+.crumbs li + li::before { content: '/'; margin-right: 0.5rem; color: #9db0c0; }
+/* A 44 px tall tap area; the negative margin keeps the visual spacing of a small text line. */
+.crumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; margin-block: -0.85rem; color: var(--c-muted); }
+.crumbs a:hover { color: var(--c-primary); }
+.crumbs [aria-current] { color: var(--c-ink); font-weight: 600; }
+
+/* ---------- "Now hiring" pill with a live dot (home + career) ---------- */
+.hiring-pill { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.95rem 0.4rem 0.75rem; border-radius: 999px; background: var(--c-success-soft); color: var(--c-success); border: 1px solid #bfe3cd; font-size: var(--fs-300); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.3; }
+.hiring-pill--light { background: rgb(255 255 255 / 0.12); color: #fff; border-color: rgb(255 255 255 / 0.3); }
+.hiring-pill--light .live-dot { background: #6ee7b7; }
+.live-dot { position: relative; flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #1fa463; }
+.live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: inherit; animation: live-ping 1.8s var(--ease) infinite; }
+@keyframes live-ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+
+/* ---------- Service-group colour families: set --tone / --tone-soft for a component to use ---------- */
+/* --tone-ink: darker, for small text on a --tone-soft background (WCAG AA). */
+.tone-blue { --tone: var(--c-primary); --tone-soft: var(--c-primary-soft); --tone-ink: var(--c-primary-strong); }
+.tone-teal { --tone: var(--c-secondary); --tone-soft: var(--c-secondary-soft); --tone-ink: #0a5f5e; }
+.tone-plum { --tone: var(--c-plum); --tone-soft: var(--c-plum-soft); --tone-ink: #57307f; }
+.tone-sun { --tone: var(--c-sun); --tone-soft: var(--c-sun-soft); --tone-ink: #844006; }
 
 /* ---------- Prose (Markdown & long text) ---------- */
 .prose { max-width: 42rem; }
@@ -69,7 +92,7 @@ p { text-wrap: pretty; }
 .prose h3 { margin-top: 1.6em; }
 .prose ul, .prose ol { padding-left: 1.25rem; }
 .prose li + li { margin-top: 0.4em; }
-.prose blockquote { border-left: 4px solid var(--c-draft); background: var(--c-draft-soft); padding: 1rem 1.25rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: #5c3d00; }
+.prose blockquote { border-left: 4px solid var(--c-notice); background: var(--c-notice-soft); padding: 1rem 1.25rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; color: #5c3d00; }
 .prose blockquote p { margin: 0; }
 
 /* ---------- Scroll reveal (progressive enhancement: content is visible without JS) ---------- */
@@ -79,6 +102,7 @@ p { text-wrap: pretty; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   .js .reveal { opacity: 1; transform: none; }
+  .live-dot::after { animation: none; }
 }
 @media print {
   .site-header, .site-footer, .skip-link { display: none !important; }

@@ -1,0 +1,78 @@
+---
+/**
+ * One blog post as a card: cover photo (or the topic's icon), topic badge, title, summary, date and
+ * reading time. The whole card links to the article. `lead` is the large featured layout on /blog
+ * (photo beside the text from 900 px); the /blog topic filter removes the `post--lead` class while
+ * a topic is selected, so keep that class name in sync with blog/index.astro.
+ */
+import Media from './Media.astro';
+import Icon from './Icon.astro';
+import { postCategory, postImage, readingTime, type Post } from '../../content/blog';
+import { formatDate, toISODate } from '../../lib/format';
+
+interface Props { post: Post; lead?: boolean }
+const { post, lead = false } = Astro.props;
+const cat = postCategory(post);
+const image = postImage(post, lead ? '3 / 2' : '16 / 10');
+const sizes = lead
+  ? '(min-width: 1200px) 620px, (min-width: 900px) 52vw, 100vw'
+  : '(min-width: 1200px) 370px, (min-width: 680px) 46vw, 100vw';
+---
+<article class:list={['post', `tone-${cat.tone}`, lead && 'post--lead']}>
+  <div class="post__media">
+    {image ? <Media image={image} sizes={sizes} /> : <div class="post__art" aria-hidden="true"><Icon name={cat.icon} size={48} /></div>}
+  </div>
+  <div class="post__body">
+    {lead && <p class="post__flag">Featured guide</p>}
+    <p class="post__topic"><Icon name={cat.icon} size={15} /> {cat.label}</p>
+    <h3 class="post__title"><a class="post__link" href={`/blog/${post.id}`}>{post.data.title}</a></h3>
+    <p class="post__desc">{post.data.description}</p>
+    <p class="post__meta">
+      <time datetime={toISODate(post.data.date)}>{formatDate(post.data.date)}</time>
+      <span class="post__dot" aria-hidden="true"></span>
+      <span>{readingTime(post)} min read</span>
+    </p>
+    {lead && <span class="post__cta" aria-hidden="true">Read the guide <Icon name="arrow-right" size={18} /></span>}
+  </div>
+</article>
+
+<style>
+  .post { position: relative; isolation: isolate; display: flex; flex-direction: column; height: 100%; overflow: hidden; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .post:hover, .post:focus-within { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--tone) 30%, #fff); }
+  .post__media { position: relative; overflow: hidden; }
+  .post__media :global(.media) { border-radius: 0; }
+  .post__media :global(img) { transition: transform 700ms var(--ease); }
+  .post:hover .post__media :global(img), .post:focus-within .post__media :global(img) { transform: scale(1.04); }
+  .post__art { display: grid; place-items: center; aspect-ratio: 16 / 10; color: var(--tone); background: radial-gradient(circle at 30% 25%, #fff, var(--tone-soft) 70%); }
+
+  .post__body { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1.35rem 1.5rem 1.5rem; }
+  .post__flag { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-accent); }
+  .post__topic { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border-radius: 999px; background: var(--tone-soft); color: var(--tone-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.3; }
+  .post__title { font-size: 1.25rem; line-height: 1.3; }
+  .post__link { color: var(--c-ink); text-decoration: none; transition: color var(--dur) var(--ease); }
+  .post__link::after { content: ''; position: absolute; inset: 0; z-index: 1; } /* whole card is the click target */
+  .post__link:focus-visible { outline: none; }
+  .post:has(.post__link:focus-visible) { outline: 3px solid var(--c-primary); outline-offset: 3px; }
+  .post:hover .post__link { color: var(--c-primary-strong); }
+  .post__desc { color: var(--c-muted); }
+  .post__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.6rem; margin-top: auto; padding-top: 0.35rem; color: var(--c-muted); font-size: var(--fs-300); font-weight: 550; }
+  .post__dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+  .post__cta { display: none; }
+
+  .post--lead .post__title { font-size: clamp(1.5rem, 1.2rem + 1.1vw, 2rem); line-height: 1.2; }
+  .post--lead .post__desc { font-size: var(--fs-500); }
+  .post--lead .post__cta { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 650; color: var(--c-primary); }
+  .post--lead .post__cta :global(svg) { transition: transform var(--dur) var(--ease); }
+  .post--lead:hover .post__cta :global(svg) { transform: translateX(4px); }
+  @media (min-width: 900px) {
+    .post--lead { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+    /* The photo fills the card's height beside the text (overrides the frame's inline ratio). */
+    .post--lead .post__media :global(.media) { height: 100%; min-height: 22rem; aspect-ratio: auto !important; }
+    .post--lead .post__body { justify-content: center; gap: 0.9rem; padding: clamp(2rem, 1rem + 2vw, 3rem); }
+    .post--lead .post__meta { margin-top: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .post:hover, .post:focus-within { transform: none; }
+    .post:hover .post__media :global(img), .post:focus-within .post__media :global(img) { transform: none; }
+  }
+</style>

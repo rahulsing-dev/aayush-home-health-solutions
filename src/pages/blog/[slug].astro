@@ -1,37 +1,230 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
+import { getPublishedPosts, postCategory, postImage, readingTime, relatedPosts } from '../../content/blog';
+import { getService } from '../../content/services';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/layout/PageHeader.astro';
-import DraftBadge from '../../components/ui/DraftBadge.astro';
+import BlogCards from '../../components/sections/BlogCards.astro';
 import CtaBand from '../../components/sections/CtaBand.astro';
+import SectionHead from '../../components/ui/SectionHead.astro';
+import ServiceTile from '../../components/ui/ServiceTile.astro';
+import Media from '../../components/ui/Media.astro';
 import Icon from '../../components/ui/Icon.astro';
-import { formatDate, toISODate } from '../../lib/format';
+import { contact, site, telHref, whatsappHref } from '../../config/site';
+import { formatDate, jsonLd, toISODate } from '../../lib/format';
+import type { Service } from '../../lib/types';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+  const posts = await getPublishedPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post, posts } }));
 }
-const { post } = Astro.props;
-const { Content } = await render(post);
+const { post, posts } = Astro.props;
+const { Content, headings } = await render(post);
+const { title, description, date, author } = post.data;
+const cat = postCategory(post);
+const image = postImage(post, '16 / 9');
+const minutes = readingTime(post);
+// A contents list only helps in a longer article.
+const toc = headings.filter((h) => h.depth === 2);
+const showToc = toc.length >= 3;
+const related = relatedPosts(post, posts);
+const careServices = post.data.services.map(getService).filter((s): s is Service => Boolean(s));
+const phone = contact.phones[0];
+const askMessage = `Hello Aayush Home Health, I read your article "${title}" and would like to talk about care for my family.`;
+
+const url = new URL(`/blog/${post.id}`, Astro.site).toString();
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  datePublished: toISODate(date),
+  articleSection: cat.label,
+  author: author === site.name ? { '@type': 'Organization', name: site.name } : { '@type': 'Person', name: author },
+  publisher: { '@type': 'Organization', name: site.name, logo: { '@type': 'ImageObject', url: new URL('/images/aayush-home-health-solutions.svg', Astro.site).toString() } },
+  mainEntityOfPage: url,
+  url,
+};
 ---
-<BaseLayout title={post.data.title} description={post.data.description} type="article" publishedTime={post.data.date.toISOString()}>
-  <PageHeader title={post.data.title} crumbs={[{ label: 'Blog', href: '/blog' }, { label: post.data.title }]}>
-    <p class="meta">
-      <time datetime={toISODate(post.data.date)}>{formatDate(post.data.date)}</time> · by {post.data.author}
-    </p>
-  </PageHeader>
-  <article class="section">
-    <div class="container container--narrow">
-      <div class="prose"><Content /></div>
-      <p class="back"><a class="link-arrow" href="/blog"><Icon name="arrow-right" size={18} class="flip" /> Back to all posts</a></p>
+<BaseLayout title={title} description={description} type="article" publishedTime={date.toISOString()}>
+  <script is:inline type="application/ld+json" set:html={jsonLd(schema)} />
+
+  <PageHeader title={title} eyebrow={cat.label} intro={description} crumbs={[{ label: 'Blog', href: '/blog' }, { label: title }]}>
+    <div class="byline">
+      <span class="byline__avatar" aria-hidden="true">{author.charAt(0).toUpperCase()}</span>
+      <p class="byline__text">
+        <span class="byline__author">Blog by {author}</span>
+        <span class="byline__meta">
+          <time datetime={toISODate(date)}>{formatDate(date)}</time>
+          <span class="byline__dot" aria-hidden="true"></span>
+          <span>{minutes} min read</span>
+        </span>
+      </p>
     </div>
-  </article>
-  <CtaBand title="Looking for care at home?" text="Speak to our team. We are reachable 24/7." />
+  </PageHeader>
+
+  {image && (
+    <div class="container cover">
+      <Media image={image} eager sizes="(min-width: 1100px) 1016px, 100vw" />
+    </div>
+  )}
+
+  <div class:list={['section', 'article', image && 'article--has-cover']}>
+    <div class="container article__grid">
+      <article class="article__main" aria-label={title}>
+        {showToc && (
+          <details class="toc toc--inline">
+            <summary>In this article <Icon name="chevron-down" size={18} class="toc__chev" /></summary>
+            <nav aria-label="In this article">
+              <ol role="list">{toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+            </nav>
+          </details>
+        )}
+
+        <div class="prose article-body"><Content /></div>
+
+        <p class="note"><Icon name="info" size={20} /> <span>This article shares general information to help families. It is not a substitute for medical advice: always follow the guidance of your loved one’s doctor, and call 108 or 112 in an emergency.</span></p>
+
+        {careServices.length > 0 && (
+          <section class="care" aria-labelledby="care-h">
+            <h2 id="care-h">Care that can help</h2>
+            <ul role="list" class="care__grid">
+              {careServices.map((s) => <li><ServiceTile service={s} compact /></li>)}
+            </ul>
+          </section>
+        )}
+
+        <p class="back"><a class="link-arrow" href="/blog"><Icon name="arrow-right" size={18} class="flip" /> All articles</a></p>
+      </article>
+
+      <aside class="article__side" aria-label="About this article">
+        {showToc && (
+          <nav class="toc toc--side" aria-label="In this article">
+            <p class="toc__title">In this article</p>
+            <ol role="list">{toc.map((h) => <li><a href={`#${h.slug}`} data-toc={h.slug}>{h.text}</a></li>)}</ol>
+          </nav>
+        )}
+        <div class="ask">
+          <span class="ask__icon"><Icon name="hand-heart" size={24} /></span>
+          <p class="ask__title">Questions about care at home?</p>
+          <p class="ask__text">Talk to our team about your family’s situation. {contact.availability}.</p>
+          <a class="btn btn--primary" href={telHref(phone.tel)}><Icon name="phone" size={18} /> <span class="sr-only">Call </span>{phone.display}</a>
+          <a class="btn btn--whatsapp" href={whatsappHref(askMessage)} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Chat on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  {related.length > 0 && (
+    <section class="section section--soft" aria-labelledby="more-h">
+      <div class="container">
+        <SectionHead id="more-h" eyebrow="Keep reading" title="More guides for families" />
+        <BlogCards posts={related} />
+        <p class="more"><a class="link-arrow" href="/blog">View all articles <Icon name="arrow-right" size={18} /></a></p>
+      </div>
+    </section>
+  )}
+
+  <CtaBand
+    title="Looking for care at home?"
+    text="Speak to our team about the support your loved one needs. We are reachable 24/7."
+    whatsapp={{ label: 'WhatsApp', message: askMessage }}
+  />
 </BaseLayout>
 
+<script>
+  // Highlight the section being read in the desktop contents list.
+  const links = new Map([...document.querySelectorAll<HTMLAnchorElement>('[data-toc]')].map((a) => [a.dataset.toc!, a]));
+  if (links.size && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          links.forEach((a) => a.classList.remove('is-active'));
+          links.get(e.target.id)?.classList.add('is-active');
+        }
+      },
+      { rootMargin: '0px 0px -70% 0px' },
+    );
+    links.forEach((_, id) => { const h = document.getElementById(id); if (h) io.observe(h); });
+  }
+</script>
+
 <style>
-  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; color: var(--c-muted); }
-  .back { margin-top: 3rem; }
+  .byline { display: flex; align-items: center; gap: 0.85rem; margin-top: 0.25rem; }
+  .byline__avatar { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: linear-gradient(140deg, var(--c-primary), var(--c-secondary)); color: #fff; font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; line-height: 1; box-shadow: 0 0 0 3px #fff, var(--shadow-sm); }
+  .byline__text { display: grid; line-height: 1.35; }
+  .byline__author { font-weight: 650; color: var(--c-ink); }
+  .byline__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.55rem; color: var(--c-muted); font-size: var(--fs-300); }
+  .byline__dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+
+  /* Cover photo, lifted over the bottom edge of the page header. */
+  .cover { position: relative; z-index: 1; max-width: calc(63.5rem + 2 * var(--gutter)); margin-top: -1.5rem; }
+  .cover :global(.media) { box-shadow: var(--shadow-lg); }
+  @media (min-width: 760px) { .cover :global(.media) { aspect-ratio: 2 / 1 !important; } }
+  .article--has-cover { padding-top: clamp(2rem, 1.5rem + 2vw, 3.5rem); }
+
+  .article__grid { display: grid; gap: 2.5rem; }
+  .article__main { min-width: 0; }
+  .article__side { display: grid; gap: 1.25rem; align-content: start; }
+  @media (min-width: 1024px) {
+    .article__grid { grid-template-columns: minmax(0, 42rem) 17.5rem; justify-content: center; gap: 4rem; }
+    .article__side { position: sticky; top: calc(var(--header-h) + 1.5rem); }
+  }
+
+  /* Contents: collapsible above the article on phones/tablets, a sticky list beside it on desktop. */
+  .toc ol { display: grid; gap: 0.15rem; counter-reset: toc; }
+  .toc li { counter-increment: toc; }
+  .toc a { display: flex; gap: 0.6rem; min-height: 2.75rem; align-items: center; padding: 0.35rem 0.75rem; border-radius: var(--radius-sm); color: var(--c-text); text-decoration: none; font-size: 0.9375rem; line-height: 1.35; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .toc a::before { content: counter(toc, decimal-leading-zero); flex: none; color: var(--c-muted); font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .toc a:hover { background: var(--c-primary-soft); color: var(--c-primary-strong); }
+  .toc--inline { margin-bottom: 2rem; border: 1px solid var(--c-line); border-radius: var(--radius-md); background: var(--c-bg-soft); }
+  .toc--inline summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3rem; padding: 0.6rem 1.1rem; font-weight: 650; color: var(--c-ink); cursor: pointer; list-style: none; border-radius: var(--radius-md); }
+  .toc--inline summary::-webkit-details-marker { display: none; }
+  .toc--inline :global(.toc__chev) { transition: transform var(--dur) var(--ease); }
+  .toc--inline[open] :global(.toc__chev) { transform: rotate(180deg); }
+  .toc--inline nav { padding: 0 0.5rem 0.75rem; }
+  .toc--side { display: none; }
+  .toc__title { padding: 0 0.75rem 0.5rem; font-size: var(--fs-300); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-secondary); }
+  .toc--side a { border-left: 2px solid var(--c-line); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+  .toc--side a.is-active { border-left-color: var(--c-primary); background: var(--c-primary-soft); color: var(--c-primary-strong); font-weight: 600; }
+  @media (min-width: 1024px) { .toc--inline { display: none; } .toc--side { display: block; } }
+
+  /* Reading typography for the Markdown body. */
+  .article-body { max-width: none; font-size: 1.0625rem; line-height: 1.75; }
+  @media (min-width: 760px) { .article-body { font-size: 1.125rem; } }
+  .article-body > :global(p:first-child) { font-size: 1.15em; line-height: 1.65; color: var(--c-ink); }
+  .article-body :global(h2) { margin-top: 2.2em; font-size: clamp(1.5rem, 1.25rem + 0.9vw, 1.875rem); }
+  .article-body :global(h3) { margin-top: 1.7em; font-size: 1.25rem; }
+  .article-body :global(h2 + *), .article-body :global(h3 + *) { margin-top: 0.6em; }
+  .article-body :global(ul) { list-style: none; padding-left: 0; }
+  .article-body :global(ul > li) { position: relative; padding-left: 1.6rem; }
+  .article-body :global(ul > li::before) { content: ''; position: absolute; left: 0.3rem; top: 0.72em; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--c-secondary); }
+  .article-body :global(ol) { padding-left: 1.4rem; }
+  .article-body :global(ol > li::marker) { color: var(--c-secondary); font-weight: 700; }
+  .article-body :global(strong) { color: var(--c-ink); font-weight: 650; }
+  .article-body :global(a) { font-weight: 600; text-decoration-thickness: 1px; }
+  .article-body :global(a:hover) { text-decoration-thickness: 2px; }
+
+  .note { display: flex; gap: 0.75rem; align-items: flex-start; margin-top: 2.5rem; padding: 1rem 1.15rem; border-radius: var(--radius-md); background: var(--c-bg-soft); border: 1px solid var(--c-line); color: var(--c-muted); font-size: 0.9375rem; }
+  .note :global(svg) { flex: none; margin-top: 0.15rem; color: var(--c-primary); }
+
+  .care { display: grid; gap: 1.25rem; margin-top: 3rem; padding-top: 2.5rem; border-top: 1px solid var(--c-line); }
+  .care h2 { font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem); }
+  .care__grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 720px) { .care__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .back { margin-top: 2.5rem; }
   .back :global(.flip) { transform: scaleX(-1); }
   .back .link-arrow:hover :global(.flip) { transform: scaleX(-1) translateX(4px); }
+  .back a, .more a { min-height: 2.75rem; }
+
+  .ask { display: grid; gap: 0.75rem; justify-items: start; padding: 1.5rem; border-radius: var(--radius-lg); background: linear-gradient(160deg, var(--c-primary-soft), #fff 70%); border: 1px solid var(--c-line); box-shadow: var(--shadow-sm); }
+  .ask__icon { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: #fff; color: var(--c-primary); box-shadow: var(--shadow-sm); }
+  .ask__title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; line-height: 1.25; color: var(--c-ink); }
+  .ask__text { color: var(--c-muted); }
+  .ask .btn { width: 100%; }
+  @media (min-width: 560px) and (max-width: 1023px) { .ask { grid-template-columns: auto 1fr; column-gap: 1rem; } .ask__icon { grid-row: span 2; } .ask .btn { grid-column: span 2; } }
+
+  .more { margin-top: 2rem; text-align: center; }
 </style>

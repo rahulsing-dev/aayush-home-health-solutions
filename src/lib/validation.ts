@@ -8,6 +8,7 @@ export type FormKind = 'enquiry' | 'booking';
 
 export interface FormValues {
   fullName: string;
+  /** Optional: we reply by phone; an email address only adds a reply-to for the notification. */
   email: string;
   phone: string;
   city: string;
@@ -15,8 +16,8 @@ export interface FormValues {
   date: string; // yyyy-mm-dd or ''
   package: string;
   message: string;
-  /** Honeypot: must stay empty. Bots tend to fill every field. */
-  website: string;
+  /** Web3Forms honeypot (`botcheck`): a hidden checkbox that must stay unticked. Bots tend to fill every field. */
+  botcheck: string;
 }
 
 export type FormErrors = Partial<Record<keyof FormValues, string>>;
@@ -63,13 +64,12 @@ export function validateForm(values: FormValues, opts: ValidationOptions): FormE
   if (v('fullName').length < 2) errors.fullName = 'Please enter your full name.';
   else if (v('fullName').length > 100) errors.fullName = 'Name is too long (100 characters maximum).';
 
-  if (!v('email')) errors.email = 'Please enter your email address.';
-  else if (!EMAIL_RE.test(v('email'))) errors.email = 'Please enter a valid email address, such as name@example.com.';
+  if (v('email') && !EMAIL_RE.test(v('email'))) errors.email = 'Please enter a valid email address, such as name@example.com.';
 
   if (!v('phone')) errors.phone = 'Please enter a phone number we can reach you on.';
   else if (!isValidPhone(v('phone'))) errors.phone = 'Please enter a valid phone number (10 to 13 digits).';
 
-  if (v('city').length < 2) errors.city = 'Please enter your city.';
+  if (v('city').length < 2) errors.city = 'Please tell us where care is needed (area or city).';
 
   if (!v('service')) errors.service = 'Please choose the service you need.';
   else if (!opts.allowedServices.includes(v('service'))) errors.service = 'Please choose a service from the list.';
@@ -90,5 +90,5 @@ export function validateForm(values: FormValues, opts: ValidationOptions): FormE
   return errors;
 }
 
-/** True when the honeypot was filled in — treat as spam and drop silently. */
-export const isSpam = (values: FormValues) => (values.website ?? '').trim() !== '';
+/** True when the honeypot was ticked/filled in — treat as spam and drop silently. */
+export const isSpam = (values: FormValues) => (values.botcheck ?? '').trim() !== '';

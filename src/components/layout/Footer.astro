@@ -1,71 +1,107 @@
 ---
-import { getCollection } from 'astro:content';
+/**
+ * Site footer, designed mobile first:
+ * phones   — brand, then Services | Company side by side, then contact details;
+ * tablets  — brand across the top, then Services | Company | Contact;
+ * desktop  — four columns.
+ * One office sits in the contact column; several get their own full-width row.
+ */
 import Logo from '../ui/Logo.astro';
 import Icon from '../ui/Icon.astro';
-import { contact, offices, site, socialLinks, telHref } from '../../config/site';
-import { footerLegal, mainNav } from '../../config/navigation';
-import { services } from '../../content/services';
-import { formatDate } from '../../lib/format';
+import { contact, offices, site, socialLinks, telHref, whatsappHref } from '../../config/site';
+import { footerLegal } from '../../config/navigation';
+import { featuredServices, services } from '../../content/services';
 
-const posts = (await getCollection('blog')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 2);
 const year = new Date().getFullYear();
-const company = mainNav.filter((n) => !n.children);
+// A long service list would swamp the footer: show the featured ones plus a link to all.
+const footerServices = services.length > 7 ? (featuredServices.length ? featuredServices : services).slice(0, 6) : services;
+const linkGroups = [
+  { title: 'Company', links: [{ label: 'About Us', href: '/about' }, { label: 'Why Aayush', href: '/why-aayush' }, { label: 'Testimonials', href: '/testimonials' }, { label: 'Career', href: '/career' }] },
+  { title: 'Help', links: [{ label: 'Blog', href: '/blog' }, { label: 'FAQs', href: '/faqs' }, { label: 'Contact Us', href: '/contact' }] },
+];
+const multiOffice = offices.length > 1;
+const [emailUser, emailDomain] = contact.email.split('@');
 ---
 <footer class="site-footer">
-  <div class="container footer__top">
+  <div class="container footer__main">
     <div class="footer__brand">
-      <a href="/"><Logo variant="light" /></a>
+      <a href="/" class="footer__logo"><Logo variant="light" /></a>
       <p class="footer__tag">{site.tagline}.</p>
-      <ul role="list" class="footer__contact">
-        {contact.phones.map((p) => (
-          <li><Icon name="phone" size={18} /><a href={telHref(p.tel)}>{p.display}</a></li>
-        ))}
-        <li><Icon name="mail" size={18} /><a href={`mailto:${contact.email}`}>{contact.email}</a></li>
-        <li><Icon name="clock" size={18} /><span>{contact.availability}</span></li>
-      </ul>
+      <p class="footer__about">Home nursing and care for elderly persons and patients in Bangalore, since {site.foundedLabel}.</p>
+      <p class="footer__live"><span class="live-dot" aria-hidden="true"></span> {contact.availability}</p>
     </div>
 
-    <nav class="footer__col" aria-label="Services">
+    <nav class="footer__nav footer__nav--services" aria-label="Services">
       <h2 class="footer__h">Services</h2>
-      <ul role="list">
-        {services.map((s) => <li><a href={`/services/${s.slug}`}>{s.title}</a></li>)}
-      </ul>
-      <h2 class="footer__h footer__h--spaced">Company</h2>
-      <ul role="list">
-        <li><a href="/">Home</a></li>
-        {company.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
-        <li><a href="/contact">Contact Us</a></li>
+      <ul role="list" class="footer__links">
+        {footerServices.map((s) => <li><a href={`/services/${s.slug}`}>{s.title}</a></li>)}
+        {footerServices.length < services.length && <li><a class="footer__all" href="/services">All {services.length} services <Icon name="arrow-right" size={16} /></a></li>}
       </ul>
     </nav>
 
-    <div class="footer__col">
-      <h2 class="footer__h">Recent posts</h2>
-      <ul role="list" class="footer__posts">
-        {posts.map((p) => (
+    <nav class="footer__nav footer__nav--company" aria-label="Company">
+      {linkGroups.map((g) => (
+        <div class="footer__group">
+          <h2 class="footer__h">{g.title}</h2>
+          <ul role="list" class="footer__links">
+            {g.links.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+          </ul>
+        </div>
+      ))}
+    </nav>
+
+    <div class="footer__contact">
+      <h2 class="footer__h">Get in touch</h2>
+      <ul role="list" class="footer__reach">
+        {contact.phones.map((p, i) => (
           <li>
-            <a href={`/blog/${p.id}`}>{p.data.title}</a>
-            <time datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>
+            <a class="reach" href={telHref(p.tel)}>
+              <span class="footer__chip"><Icon name="phone" size={18} /></span>
+              <span class="footer__reach-text"><span class="footer__label">{i === 0 ? 'Call us' : 'Also on'}</span><span class="footer__value">{p.display}</span></span>
+            </a>
+          </li>
+        ))}
+        <li>
+          <a class="reach" href={whatsappHref()} target="_blank" rel="noopener noreferrer" data-contact="whatsapp">
+            <span class="footer__chip footer__chip--wa"><Icon name="whatsapp" size={18} /></span>
+            <span class="footer__reach-text"><span class="footer__label">WhatsApp</span><span class="footer__value">{contact.whatsapp.display}<span class="sr-only"> (opens WhatsApp)</span></span></span>
+          </a>
+        </li>
+        <li>
+          <a class="reach" href={`mailto:${contact.email}`}>
+            <span class="footer__chip"><Icon name="mail" size={18} /></span>
+            {/* <wbr> lets the long address break at the "@" on narrow phones. */}
+            <span class="footer__reach-text"><span class="footer__label">Email</span><span class="footer__value footer__value--email">{emailUser}<wbr />@{emailDomain}</span></span>
+          </a>
+        </li>
+        {!multiOffice && offices.map((o) => (
+          <li class="reach">
+            <span class="footer__chip"><Icon name="map-pin" size={18} /></span>
+            <address class="office footer__reach-text">
+              <span class="footer__label">{o.name}</span>
+              <span class="office__lines">{o.addressLines.map((l) => <span>{l}</span>)}</span>
+            </address>
           </li>
         ))}
       </ul>
     </div>
-  </div>
 
-  <div class="container">
-   <div class="footer__offices">
-    <h2 class="footer__h">{offices.length > 1 ? 'Office addresses' : 'Office address'}</h2>
-    <div class:list={['footer__office-grid', offices.length === 1 && 'footer__office-grid--single']}>
-      {offices.map((o) => (
-        <address class="office">
-          <h3>{o.name}</h3>
-          <p>{o.addressLines.map((l) => <span>{l}</span>)}</p>
-          {o.contacts.map((c) => (
-            <p class="office__contact">{c.name && <span>{c.name}: </span>}{c.phones.map((ph, i) => <>{i > 0 && ', '}<a href={telHref(ph)}>{ph}</a></>)}</p>
+    {multiOffice && (
+      <div class="footer__offices">
+        <h2 class="footer__h">Office addresses</h2>
+        <div class="footer__office-grid">
+          {offices.map((o) => (
+            <address class="office">
+              <h3>{o.name}</h3>
+              <p class="office__lines">{o.addressLines.map((l) => <span>{l}</span>)}</p>
+              {o.contacts.map((c) => (
+                <p class="office__contact">{c.name && <span>{c.name}: </span>}{c.phones.map((ph, i) => <>{i > 0 && ', '}<a href={telHref(ph)}>{ph}</a></>)}</p>
+              ))}
+            </address>
           ))}
-        </address>
-      ))}
-    </div>
-   </div>
+        </div>
+      </div>
+    )}
   </div>
 
   <div class="footer__bottom">
@@ -80,36 +116,82 @@ const company = mainNav.filter((n) => !n.children);
 </footer>
 
 <style>
-  .site-footer { background: var(--c-navy); color: #c6d6e4; font-size: 0.9375rem; }
-  .site-footer a { color: #e8f1f8; text-decoration: none; }
-  .site-footer a:hover { color: #fff; text-decoration: underline; text-underline-offset: 0.2em; }
+  .site-footer { position: relative; overflow: hidden; isolation: isolate; background: radial-gradient(40rem 22rem at 100% 0%, rgb(20 120 192 / 0.22), transparent 70%), radial-gradient(30rem 20rem at 0% 100%, rgb(14 124 123 / 0.16), transparent 70%), var(--c-navy); color: #c6d6e4; font-size: var(--fs-400); }
+  /* A thin brand-gradient rule along the top edge. */
+  .site-footer::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--c-primary), var(--c-secondary) 55%, var(--c-accent)); }
+  .site-footer a { color: #e8f1f8; text-decoration: none; transition: color var(--dur) var(--ease); }
+  .site-footer a:hover { color: #fff; text-decoration: underline; text-underline-offset: 0.25em; }
   .site-footer :focus-visible { outline-color: #8fc4f0; }
-  .footer__top { display: grid; gap: 2.5rem; padding-block: clamp(3rem, 2rem + 4vw, 4.5rem) 2.5rem; }
-  .footer__tag { margin-top: 1rem; font-family: var(--font-display); font-size: 1.125rem; color: #fff; }
-  .footer__contact { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: 0.65rem; }
-  .footer__contact li { display: flex; align-items: center; gap: 0.6rem; }
-  .footer__contact :global(svg) { color: #8fc4f0; flex: none; }
-  .footer__h { font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; margin-bottom: 1rem; }
-  .footer__h--spaced { margin-top: 2rem; }
-  .footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
-  .footer__posts { gap: 1.1rem !important; }
-  .footer__posts li { display: grid; gap: 0.2rem; }
-  .footer__posts a { font-weight: 560; line-height: 1.4; }
-  .footer__posts time { font-size: 0.8125rem; color: #9db3c6; }
-  .footer__offices { padding-block: 2rem 2.5rem; border-top: 1px solid rgb(255 255 255 / 0.12); }
+
+  .footer__main { display: grid; gap: 2.25rem 1.25rem; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: 'brand brand' 'services company' 'contact contact' 'offices offices'; padding-block: clamp(3rem, 2.25rem + 3vw, 4.5rem) 2.5rem; }
+  .footer__brand { grid-area: brand; display: grid; gap: 0.85rem; justify-items: start; align-content: start; }
+  .footer__nav--services { grid-area: services; }
+  .footer__nav--company { grid-area: company; display: grid; gap: 1.75rem; align-content: start; }
+  .footer__contact { grid-area: contact; }
+  .footer__offices { grid-area: offices; }
+
+  .footer__logo { display: inline-flex; border-radius: var(--radius-md); box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.5); }
+  .footer__logo :global(.logo--light) { padding: 0.5rem 0.65rem; }
+  .footer__logo :global(.logo--light .logo__image) { height: 84px; }
+  .footer__tag { margin-top: 0.4rem; font-family: var(--font-display); font-size: 1.375rem; font-weight: 600; line-height: 1.25; color: #fff; }
+  .footer__about { max-width: 30rem; color: #b3c6d6; line-height: 1.6; }
+  .footer__live { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.95rem 0.45rem 0.8rem; border-radius: 999px; background: rgb(255 255 255 / 0.07); border: 1px solid rgb(255 255 255 / 0.14); color: #fff; font-size: var(--fs-300); font-weight: 650; }
+  .footer__live .live-dot { background: #6ee7b7; }
+
+  /* Column headings: small caps with a short teal accent. */
+  .footer__h { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; font-family: var(--font-body); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
+  .footer__h::before { content: ''; width: 1.1rem; height: 2px; border-radius: 2px; background: #5fd0c9; }
+
+  /* Phones and tablets: every link is a 44 px tall row. */
+  .footer__links a { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.75rem; line-height: 1.3; }
+  .site-footer .footer__all { font-weight: 650; color: #8fc4f0; }
+  .footer__all :global(svg) { transition: transform var(--dur) var(--ease); }
+  .footer__all:hover :global(svg) { transform: translateX(3px); }
+
+  /* Each contact row is one link: the 44 px icon chip makes it a comfortable tap target. */
+  .footer__reach { display: grid; gap: 0.6rem; }
+  .reach { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+  li.reach { align-items: flex-start; }
+  .site-footer a.reach:hover { text-decoration: none; }
+  .site-footer a.reach:hover .footer__value { text-decoration: underline; text-underline-offset: 0.25em; }
+  .site-footer a.reach:hover .footer__chip { background: rgb(255 255 255 / 0.14); border-color: rgb(255 255 255 / 0.24); }
+  .footer__chip { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 0.8rem; background: rgb(255 255 255 / 0.07); border: 1px solid rgb(255 255 255 / 0.12); color: #8fc4f0; transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .footer__chip--wa { color: #6ee7b7; }
+  .footer__reach-text { display: grid; min-width: 0; line-height: 1.35; font-style: normal; }
+  .footer__label { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.02em; color: #9db3c6; }
+  .footer__value { font-weight: 600; color: #e8f1f8; }
+  .footer__value--email { overflow-wrap: anywhere; }
+  .office__lines { display: grid; margin-top: 0.15rem; color: #b3c6d6; line-height: 1.55; }
+
+  .footer__offices { padding-top: 2rem; border-top: 1px solid rgb(255 255 255 / 0.12); }
   .footer__office-grid { display: grid; gap: 1.75rem; }
-  .office { font-style: normal; }
-  .office h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 650; color: #fff; margin-bottom: 0.5rem; letter-spacing: 0; }
-  .office p { color: #b3c6d6; line-height: 1.6; }
-  .office p span { display: block; }
-  .office .office__contact { margin-top: 0.35rem; }
-  .office a { white-space: nowrap; }
-  .office .office__contact span { display: inline; }
-  .footer__bottom { border-top: 1px solid rgb(255 255 255 / 0.12); }
-  .footer__bottom-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 1.5rem; padding-block: 1.25rem; }
-  .footer__legal { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; list-style: none; margin: 0; padding: 0; }
-  @media (min-width: 720px) {
-    .footer__top { grid-template-columns: 1.3fr 1fr 1fr; }
-    .footer__office-grid:not(.footer__office-grid--single) { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+  .footer__offices .office { font-style: normal; }
+  .footer__offices .office h3 { margin-bottom: 0.4rem; font-family: var(--font-body); font-size: 1rem; font-weight: 650; letter-spacing: 0; color: #fff; }
+  .footer__offices .office__contact { margin-top: 0.35rem; }
+  .footer__offices .office a { white-space: nowrap; }
+
+  .footer__bottom { border-top: 1px solid rgb(255 255 255 / 0.12); background: rgb(0 0 0 / 0.12); }
+  .footer__bottom-row { display: grid; justify-items: center; gap: 0.25rem; padding-block: 1rem; text-align: center; font-size: var(--fs-300); color: #9db3c6; }
+  .footer__legal { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 1.5rem; }
+  .footer__legal a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+
+  @media (min-width: 640px) {
+    /* The contact column holds the address, so it gets the most room. */
+    .footer__main { grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1.4fr); grid-template-areas: 'brand brand brand' 'services company contact' 'offices offices offices'; column-gap: 2rem; }
+    .footer__brand { grid-template-columns: auto minmax(0, 1fr); column-gap: 1.5rem; align-items: center; }
+    .footer__logo { grid-row: span 3; }
+    .footer__tag { margin-top: 0; }
+    .footer__offices .footer__office-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .footer__bottom-row { display: flex; align-items: center; justify-content: space-between; text-align: left; padding-block: 0.5rem; }
+  }
+  @media (min-width: 1100px) {
+    .site-footer { font-size: 0.9375rem; }
+    .footer__main { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.95fr) minmax(0, 0.8fr) minmax(0, 1.3fr); grid-template-areas: 'brand services company contact' 'offices offices offices offices'; column-gap: 3rem; }
+    .footer__brand { grid-template-columns: 1fr; align-items: start; }
+    .footer__logo { grid-row: auto; }
+    .footer__tag { margin-top: 0.4rem; }
+    /* Mouse and trackpad: links can sit closer together. */
+    .footer__links a { min-height: 2.25rem; }
+    .footer__offices .footer__office-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 </style>

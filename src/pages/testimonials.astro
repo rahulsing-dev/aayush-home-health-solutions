@@ -1,11 +1,201 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
-import Testimonials from '../components/sections/Testimonials.astro';
 import CtaBand from '../components/sections/CtaBand.astro';
+import SectionHead from '../components/ui/SectionHead.astro';
+import TestimonialPhoto from '../components/ui/TestimonialPhoto.astro';
+import Icon from '../components/ui/Icon.astro';
+import { visibleTestimonials } from '../content/testimonials';
+import { contact, site, whatsappHref } from '../config/site';
+import type { IconName } from '../lib/types';
+
+// Feature a real review; the rest go in the grid below it.
+const featured = visibleTestimonials.find((t) => !t.sample) ?? visibleTestimonials[0];
+const rest = visibleTestimonials.filter((t) => t !== featured);
+
+// The stories grid also holds the "share your experience" card. When it completes the last row it
+// sits there as a tile; otherwise it takes a full-width row of its own.
+const items = rest.length + 1;
+const colsLg = Math.min(3, items);
+const shareTileMd = rest.length > 0 && items % 2 === 0;
+const shareTileLg = rest.length > 0 && items % colsLg === 0;
+
+const facts: { icon: IconName; label: string }[] = [
+  { icon: 'heart', label: `Caring for families since ${site.foundedYear}` },
+  { icon: 'home', label: 'Home nursing in Bangalore' },
+  { icon: 'clock', label: contact.availability },
+];
+
+const feedbackWhatsapp = whatsappHref('Hello Aayush Home Health, I would like to share feedback about the care my family received.');
+const feedbackMail = `mailto:${contact.email}?subject=${encodeURIComponent('Feedback for Aayush Home Health')}`;
 ---
 <BaseLayout title="Testimonials" description="Read what families say about the home nursing care provided by Aayush Home Health Solutions.">
-  <PageHeader title="Testimonials" eyebrow="Kind words" intro="Families who have trusted Aayush with the care of their loved ones share their experience." crumbs={[{ label: 'Testimonials' }]} />
-  <section class="section"><div class="container"><Testimonials /></div></section>
+  <PageHeader
+    title="Families who trusted us with someone they love"
+    eyebrow="Testimonials"
+    intro="Families who have trusted Aayush with the care of their loved ones share their experience."
+    crumbs={[{ label: 'Testimonials' }]}
+  >
+    <ul class="facts" role="list">
+      {facts.map((f) => <li><Icon name={f.icon} size={18} />{f.label}</li>)}
+    </ul>
+  </PageHeader>
+
+  {featured && (
+    <section class="section" aria-labelledby="featured-h">
+      <div class="container">
+        <div class="feature reveal" id={`review-${featured.id}`}>
+          <div class="feature__media">
+            <TestimonialPhoto photo={featured.photo} class="feature__photo" sizes="(min-width: 900px) 310px, (min-width: 640px) 150px, 125px" />
+            {featured.context && <span class="feature__tag"><Icon name="heart" size={16} />{featured.context}</span>}
+          </div>
+          <figure class="feature__copy">
+            <Icon name="quote" size={72} class="feature__mark" />
+            <p class="eyebrow">Featured story</p>
+            <h2 id="featured-h" class="feature__title">&ldquo;{featured.highlight}&rdquo;</h2>
+            <blockquote class="feature__quote"><p>{featured.quote}</p></blockquote>
+            <figcaption class="feature__by">
+              <strong>{featured.author}</strong>
+              <span>{featured.relation}</span>
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section section--soft" aria-labelledby="stories-h">
+    <div class="container">
+      {rest.length > 0 && (
+        <SectionHead id="stories-h" eyebrow="In their words" title="More stories from families" text="Every family's situation is different. These are some of the experiences they have shared with us." />
+      )}
+      <div class="stories" style={`--cols-lg:${colsLg}`}>
+        {rest.map((t, i) => (
+          <figure class:list={['story', i % 3 === 1 && 'story--tint']} id={`review-${t.id}`}>
+            <Icon name="quote" size={52} class="story__mark" />
+            <h3 class="story__title">{t.highlight}</h3>
+            <blockquote class="story__quote"><p>{t.quote}</p></blockquote>
+            <figcaption class="story__by">
+              <TestimonialPhoto photo={t.photo} class="story__avatar" sizes="64px" />
+              <span class="story__who">
+                <strong>{t.author}</strong>
+                <span>{t.relation}</span>
+                {t.context && <span>{t.context}</span>}
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+        <aside class:list={['share', shareTileMd && 'share--tile-md', shareTileLg && 'share--tile-lg']} aria-labelledby={rest.length > 0 ? 'share-h' : 'stories-h'}>
+          <span class="share__icon" aria-hidden="true"><Icon name="heart" size={26} /></span>
+          <div class="share__copy">
+            <h2 id={rest.length > 0 ? 'share-h' : 'stories-h'}>Has Aayush cared for your family?</h2>
+            <p>We would love to hear about your experience. Your words help other families choose care with confidence, and help our team keep improving.</p>
+          </div>
+          <div class="btn-row share__actions">
+            <a class="btn btn--whatsapp" href={feedbackWhatsapp} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Share on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+            <a class="btn btn--outline" href={feedbackMail}><Icon name="mail" size={18} /> Email your feedback</a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
   <CtaBand title="Let us help your family too" text="Get in touch. We are reachable 24/7." />
 </BaseLayout>
+
+<style>
+  /* ---------- Header facts ---------- */
+  .facts { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.5rem; }
+  .facts li {
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.95rem; border-radius: 999px;
+    background: #fff; border: 1px solid var(--c-line); box-shadow: var(--shadow-sm);
+    font-size: var(--fs-300); font-weight: 600; color: var(--c-ink);
+  }
+  .facts :global(svg) { color: var(--c-secondary); flex-shrink: 0; }
+
+  /* ---------- Featured story ---------- */
+  .feature {
+    display: grid; overflow: hidden; border-radius: 1.75rem;
+    background: var(--c-bg-warm); border: 1px solid #efe5d6; box-shadow: var(--shadow-md);
+  }
+  .feature__media { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.25rem; padding: 1.75rem 1.35rem 0; }
+  .feature :global(.feature__photo) { --tphoto-size: 7.5rem; --tphoto-radius: 1.4rem; }
+  .feature__tag {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.5rem 0.9rem; border-radius: 999px; background: #fff; border: 1px solid #efe5d6;
+    font-size: var(--fs-300); font-weight: 650; color: var(--c-ink); box-shadow: var(--shadow-sm);
+  }
+  .feature__tag :global(svg) { color: var(--c-accent); }
+  .feature__copy { position: relative; display: grid; gap: 1rem; align-content: center; justify-items: start; padding: 2rem 1.35rem 2.25rem; }
+  .feature__copy :global(.feature__mark) { position: absolute; top: 1.25rem; right: 1.25rem; color: #eadcc6; width: 3.5rem; height: 3.5rem; }
+  .feature__title { font-size: clamp(1.5rem, 1.2rem + 1.3vw, 2.15rem); line-height: 1.25; max-width: 34rem; padding-right: 2.5rem; }
+  .feature__quote p { font-size: 1.0625rem; line-height: 1.8; color: var(--c-text); max-width: 40rem; }
+  .feature__by { display: grid; line-height: 1.35; padding-left: 1rem; border-left: 3px solid var(--c-accent); }
+  .feature__by strong { color: var(--c-ink); font-size: 1.0625rem; }
+  .feature__by span { color: var(--c-muted); font-size: 0.9375rem; }
+  @media (min-width: 640px) {
+    .feature__media { padding: 2.75rem 2.5rem 0; }
+    .feature :global(.feature__photo) { --tphoto-size: 9.25rem; --tphoto-radius: 1.6rem; }
+    .feature__copy { padding: 2.75rem 2.5rem 3rem; }
+  }
+  @media (min-width: 900px) {
+    .feature { grid-template-columns: 5fr 7fr; }
+    .feature__media {
+      flex-direction: column; flex-wrap: nowrap; justify-content: center; gap: 1.25rem; padding: 3rem 2.5rem;
+      background: radial-gradient(22rem 18rem at 30% 20%, #fff 0%, transparent 70%), linear-gradient(160deg, #f3eadd, #f8f2e9);
+      border-right: 1px solid #efe5d6;
+    }
+    .feature :global(.feature__photo) { --tphoto-size: min(100%, 19.5rem); --tphoto-radius: 1.75rem; }
+    .feature__copy { padding: 3.5rem 3.5rem 3.5rem 3.25rem; }
+    .feature__copy :global(.feature__mark) { top: 2rem; right: 2rem; width: 4.5rem; height: 4.5rem; }
+  }
+
+  /* ---------- Stories grid (equal-height rows; the share card fills the last slot) ---------- */
+  .stories { display: grid; gap: 1.5rem; }
+  .story {
+    position: relative; display: flex; flex-direction: column; gap: 0.85rem;
+    padding: 1.75rem 1.5rem 1.5rem; background: #fff; border: 1px solid var(--c-line);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  }
+  .story--tint { background: var(--c-primary-soft); border-color: var(--c-primary-tint); }
+  .story :global(.story__mark) { position: absolute; top: 1.25rem; right: 1.25rem; width: 2.75rem; height: 2.75rem; color: var(--c-primary-tint); }
+  .story--tint :global(.story__mark) { color: #bcd8ee; }
+  .story__title { font-size: 1.25rem; line-height: 1.35; padding-right: 3rem; }
+  .story__quote p { font-size: 1rem; line-height: 1.75; color: var(--c-text); }
+  .story__by { display: flex; align-items: center; gap: 0.85rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--c-line); }
+  .story--tint .story__by { border-top-color: var(--c-primary-tint); }
+  .story :global(.story__avatar) { --tphoto-size: 3.5rem; --tphoto-radius: 0.85rem; }
+  .story__who { display: grid; line-height: 1.35; min-width: 0; }
+  .story__who strong { color: var(--c-ink); }
+  .story__who span { font-size: 0.8125rem; color: var(--c-muted); }
+
+  /* ---------- Share your experience ---------- */
+  .share {
+    grid-column: 1 / -1; display: grid; gap: 1.25rem; justify-items: start; padding: 1.75rem 1.5rem;
+    background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
+  }
+  .share__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--c-accent-soft); color: var(--c-accent); }
+  .share__copy { display: grid; gap: 0.45rem; }
+  .share h2 { font-size: clamp(1.35rem, 1.2rem + 0.6vw, 1.65rem); }
+  .share p { color: var(--c-muted); max-width: 38rem; }
+  @media (max-width: 479px) { .share__actions, .share__actions .btn { width: 100%; } }
+
+  /* As a grid tile (share--tile-*), it is a warm, centred card that closes the last row. */
+  @media (min-width: 720px) {
+    .stories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .share--tile-md { grid-column: auto; }
+  }
+  @media (min-width: 720px) and (max-width: 1079px) {
+    .share--tile-md { align-content: center; background: var(--c-bg-warm); border-color: #efe5d6; }
+    .share--tile-md .share__actions { flex-direction: column; align-items: stretch; width: 100%; }
+    .share:not(.share--tile-md) { grid-template-columns: auto 1fr; align-items: center; }
+    .share:not(.share--tile-md) .share__actions { grid-column: 1 / -1; }
+  }
+  @media (min-width: 1080px) {
+    .stories { grid-template-columns: repeat(var(--cols-lg), minmax(0, 1fr)); }
+    .story { padding: 2rem 1.75rem 1.6rem; }
+    .share:not(.share--tile-lg) { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.75rem; padding: 2rem 2.25rem; }
+    .share--tile-lg { grid-column: auto; align-content: center; padding: 2rem 1.75rem; background: var(--c-bg-warm); border-color: #efe5d6; }
+    .share--tile-lg .share__actions { flex-direction: column; align-items: stretch; width: 100%; }
+  }
+</style>

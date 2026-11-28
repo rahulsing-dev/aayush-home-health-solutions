@@ -1,106 +1,213 @@
 ---
 /**
- * "Make an Enquiry" + "Book a Service" tabbed forms.
- * Delivery is configured in src/config/site.ts (forms.endpoint). With no endpoint the forms
- * run in DEMO MODE and tell the visitor that nothing was sent.
+ * Contact & booking form: one form with a "Make an enquiry / Book a service" switch.
+ * Booking makes the preferred start date required; everything else is shared, so switching
+ * never loses what was typed. Deep links: `#make-an-enquiry`, `#book-a-service`, `?service=<slug>`.
+ *
+ * Delivery: Web3Forms (src/lib/submit.ts), configured in src/config/site.ts (`forms`). With no
+ * endpoint the form runs in DEMO MODE and tells the visitor that nothing was sent.
+ * Only what is needed to call back is required: service, name, phone and area.
  */
 import Field from './Field.astro';
+import ServicePicker from './ServicePicker.astro';
 import Icon from '../ui/Icon.astro';
-import { contact, enquiryPackages, forms, telHref } from '../../config/site';
+import { contact, enquiryPackages, forms, telHref, whatsappHref } from '../../config/site';
 import { services } from '../../content/services';
+import { MESSAGE_MAX } from '../../lib/validation';
 
-const serviceOptions = services.map((s) => ({ value: s.title, slug: s.slug, selected: services.length === 1 }));
 const packageOptions = enquiryPackages.map((p) => ({ value: p }));
 const phone = contact.phones[0];
 
-const tabs = [
-  { id: 'enquiry', label: 'Make an Enquiry', icon: 'phone' as const, submit: 'Send enquiry', blurb: 'Tell us what you are looking for and we will get back to you.' },
-  { id: 'booking', label: 'Book a Service', icon: 'calendar' as const, submit: 'Request booking', blurb: 'Choose a service and your preferred start date. We will confirm the details with you.' },
+const kinds = [
+  { id: 'enquiry', anchor: 'make-an-enquiry', label: 'Make an enquiry', sub: 'Ask about care. No date needed.', icon: 'mail' as const, submit: 'Send enquiry' },
+  { id: 'booking', anchor: 'book-a-service', label: 'Book a service', sub: 'Request care from a start date.', icon: 'calendar' as const, submit: 'Request booking' },
 ];
 ---
-<div class="cf" data-contact-forms
+<div class="bk" data-contact-forms
   data-endpoint={forms.endpoint}
   data-access-key={forms.accessKey}
-  data-services={JSON.stringify(serviceOptions.map((s) => s.value))}
+  data-services={JSON.stringify(services.map((s) => s.title))}
   data-packages={JSON.stringify(enquiryPackages)}
   data-phone={phone.display}
   data-phone-tel={telHref(phone.tel)}
-  data-email={contact.email}>
+  data-email={contact.email}
+  data-whatsapp={whatsappHref()}>
 
-  <div class="cf__tabs" role="tablist" aria-label="Contact options">
-    {tabs.map((t, i) => (
-      <button type="button" role="tab" class="cf__tab" id={`tab-${t.id}`} aria-controls={`panel-${t.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1} data-tab={t.id}>
-        <Icon name={t.icon} size={20} /> {t.label}
+  <form class="bk__form" data-form data-kind="enquiry" novalidate aria-labelledby="bk-title">
+    <header class="bk__head">
+      <h2 id="bk-title">How can we help?</h2>
+      <p>Tell us what you need and we will call you back to talk it through.</p>
+    </header>
+
+    <fieldset class="kind">
+      <legend class="kind__legend">I would like to</legend>
+      <div class="kind__opts">
+        {kinds.map((k, i) => (
+          <label class="kind__opt" id={k.anchor}>
+            <input type="radio" name="kind" value={k.id} checked={i === 0} data-submit-label={k.submit} />
+            <span class="kind__card">
+              <span class="kind__icon" aria-hidden="true"><Icon name={k.icon} size={20} /></span>
+              <span class="kind__text"><span class="kind__label">{k.label}</span><span class="kind__sub">{k.sub}</span></span>
+              <span class="kind__tick" aria-hidden="true"><Icon name="check" size={14} /></span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend class="step__legend"><span class="step__num" aria-hidden="true">1</span>Care needed</legend>
+      <div class="step__grid">
+        <div class="span-2">
+          <ServicePicker id="cf-service" label="Type of service" hint="Not sure which one? Choose the closest and tell us more in the notes." />
+        </div>
+        <Field id="cf-date" name="date" label="Preferred start date" type="date" switchable>
+          <button type="button" class="chip" data-date-offset="0" aria-pressed="false">Today</button>
+          <button type="button" class="chip" data-date-offset="1" aria-pressed="false">Tomorrow</button>
+        </Field>
+        {packageOptions.length > 0 && <Field id="cf-package" name="package" label="Package" type="select" options={packageOptions} />}
+      </div>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend class="step__legend"><span class="step__num" aria-hidden="true">2</span>Your contact details</legend>
+      <div class="step__grid">
+        <Field id="cf-name" name="fullName" label="Full name" required autocomplete="name" icon="user-check" maxlength={100} />
+        <Field id="cf-phone" name="phone" label="Phone number" type="tel" required autocomplete="tel" inputmode="tel" icon="phone" placeholder="e.g. 98765 43210" hint="We will call you back on this number." />
+        <Field id="cf-email" name="email" label="Email" type="email" autocomplete="email" inputmode="email" icon="mail" />
+        <Field id="cf-city" name="city" label="Where is care needed?" required autocomplete="address-level2" icon="map-pin" placeholder="Area or city" />
+      </div>
+    </fieldset>
+
+    <fieldset class="step">
+      <legend class="step__legend"><span class="step__num" aria-hidden="true">3</span>Anything else?</legend>
+      <Field id="cf-message" name="message" label="Notes for our team" type="textarea" full maxlength={MESSAGE_MAX} counter rows={4}
+        placeholder="For example: who the care is for, the hours you need, or the best time to call."
+        hint="Please don't include medical records or detailed health information. We will discuss those with you directly." />
+    </fieldset>
+
+    <!-- Web3Forms honeypot: hidden from people and assistive technology; bots that tick it are dropped. -->
+    <div class="hp" aria-hidden="true">
+      <label for="cf-botcheck">Leave this box unticked</label>
+      <input id="cf-botcheck" name="botcheck" type="checkbox" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <div class="status" data-status role="status" aria-live="polite"></div>
+
+    <div class="bk__actions">
+      <button class="btn btn--primary bk__submit" type="submit" data-submit>
+        <span class="bk__spinner" aria-hidden="true"></span>
+        <span data-submit-text>{kinds[0].submit}</span>
+        <span class="bk__arrow" aria-hidden="true"><Icon name="arrow-right" size={18} /></span>
       </button>
-    ))}
-  </div>
+      <p class="bk__fine"><span class="req" aria-hidden="true">*</span> Required. We use your details only to reply to this request (<a href="/privacy-policy">Privacy Policy</a>).</p>
+    </div>
+  </form>
 
-  {tabs.map((t, i) => (
-    <section class="cf__panel" role="tabpanel" id={`panel-${t.id}`} aria-labelledby={`tab-${t.id}`} data-panel={t.id} hidden={i !== 0 ? true : undefined}>
-      <h2 class="cf__title">{t.label}</h2>
-      <p class="cf__blurb">{t.blurb}</p>
-      <form class="form" data-form data-kind={t.id} novalidate>
-        <div class="form__grid">
-          <Field id={`${t.id}-name`} name="fullName" label="Full name" required autocomplete="name" />
-          <Field id={`${t.id}-email`} name="email" label="Email" type="email" required autocomplete="email" inputmode="email" />
-          <Field id={`${t.id}-phone`} name="phone" label="Phone number" type="tel" required autocomplete="tel" inputmode="tel" hint="We may call you back on this number." />
-          <Field id={`${t.id}-city`} name="city" label="City" required autocomplete="address-level2" />
-          <Field id={`${t.id}-service`} name="service" label="Service required" type="select" required options={serviceOptions} />
-          <Field id={`${t.id}-date`} name="date" label={t.id === 'booking' ? 'Preferred start date' : 'Preferred date'} type="date" required={t.id === 'booking'} />
-          {packageOptions.length > 0 && <Field id={`${t.id}-package`} name="package" label="Package" type="select" options={packageOptions} />}
-          <Field id={`${t.id}-message`} name="message" label={t.id === 'booking' ? 'Care needs and notes' : 'Description'} type="textarea" full maxlength={1000}
-            hint="Please don't include detailed medical records or sensitive health information here. We'll discuss those with you directly." />
-        </div>
-        <div class="hp" aria-hidden="true">
-          <label for={`${t.id}-website`}>Leave this field empty</label>
-          <input id={`${t.id}-website`} name="website" type="text" tabindex="-1" autocomplete="off" />
-        </div>
-        <div class="form__status" data-status role="status" aria-live="polite"></div>
-        <div class="form__actions">
-          <button class="btn btn--primary" type="submit" data-submit data-label={t.submit}>{t.submit}</button>
-          <p class="form__note">Fields marked * are required.</p>
-        </div>
-      </form>
-    </section>
-  ))}
+  <section class="done" data-success hidden aria-labelledby="done-title">
+    <span class="done__icon" aria-hidden="true"><Icon name="check" size={34} /></span>
+    <h2 id="done-title" tabindex="-1" data-success-title>Thank you</h2>
+    <p class="done__lead" data-success-text></p>
+    <dl class="done__summary" data-success-summary></dl>
+    <p class="done__urgent">Need help sooner? Call <a href={telHref(phone.tel)}>{phone.display}</a> or <a href={whatsappHref()} target="_blank" rel="noopener noreferrer">message us on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>.</p>
+    <button type="button" class="btn btn--outline" data-again>Send another request</button>
+  </section>
 
   <noscript>
-    <p class="cf__noscript">JavaScript is needed to submit this form. Please call <a href={telHref(phone.tel)}>{phone.display}</a> or email <a href={`mailto:${contact.email}`}>{contact.email}</a>.</p>
+    <p class="bk__noscript">JavaScript is needed to send this form. Please call <a href={telHref(phone.tel)}>{phone.display}</a> or email <a href={`mailto:${contact.email}`}>{contact.email}</a>.</p>
   </noscript>
 </div>
 
 <style>
-  .cf { background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
-  .cf__tabs { display: none; background: var(--c-bg-soft); border-bottom: 1px solid var(--c-line); }
-  :global(.js) .cf__tabs { display: grid; grid-template-columns: 1fr 1fr; }
-  .cf__tab { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 3.75rem; padding: 0.75rem 1rem; border: 0; border-bottom: 3px solid transparent; background: transparent; font-weight: 650; color: var(--c-muted); cursor: pointer; transition: color var(--dur) var(--ease), background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
-  .cf__tab:hover { color: var(--c-primary); background: var(--c-primary-soft); }
-  .cf__tab[aria-selected='true'] { color: var(--c-primary-strong); background: #fff; border-bottom-color: var(--c-primary); }
-  .cf__tab:focus-visible { outline-offset: -4px; }
-  .cf__panel { padding: clamp(1.25rem, 1rem + 2vw, 2.5rem); }
-  :global(.js) .cf__panel[hidden] { display: none; }
-  .cf__panel + .cf__panel { border-top: 1px solid var(--c-line); }
-  :global(.js) .cf__panel + .cf__panel { border-top: 0; }
-  .cf__title { font-size: clamp(1.4rem, 1.2rem + 0.8vw, 1.75rem); }
-  .cf__blurb { color: var(--c-muted); margin-top: 0.4rem; }
-  .form { margin-top: 1.5rem; display: grid; gap: 1.25rem; }
-  .form__grid { display: grid; gap: 1.1rem 1.25rem; }
-  @media (min-width: 640px) { .form__grid { grid-template-columns: 1fr 1fr; } }
+  .bk { position: relative; background: #fff; border: 1px solid var(--c-line); border-radius: 1.5rem; box-shadow: 0 30px 60px -30px rgb(16 42 67 / 0.25), var(--shadow-sm); }
+  .bk::before { content: ''; position: absolute; inset: 0 0 auto; height: 5px; border-radius: 1.5rem 1.5rem 0 0; background: linear-gradient(90deg, var(--c-primary), var(--c-secondary)); }
+  .bk__form, .done { padding: clamp(1.25rem, 0.8rem + 2.4vw, 2.5rem); }
+  .bk__form { display: grid; gap: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+  .bk__head { display: grid; gap: 0.35rem; }
+  .bk__head h2 { font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem); }
+  .bk__head p { color: var(--c-muted); }
+  fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+
+  /* Request type: two selectable cards (native radios, so arrow keys work) */
+  .kind__legend { padding: 0; margin-bottom: 0.6rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c-muted); }
+  .kind__opts { display: grid; gap: 0.6rem; }
+  @media (min-width: 480px) { .kind__opts { grid-template-columns: 1fr 1fr; } }
+  .kind__opt { position: relative; display: block; cursor: pointer; scroll-margin-top: calc(var(--header-h) + 1.5rem); }
+  .kind__opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .kind__card { display: flex; align-items: center; gap: 0.75rem; height: 100%; min-height: 4.25rem; padding: 0.75rem 0.9rem; border: 1.5px solid var(--c-field-line); border-radius: 1rem; background: var(--c-field-bg); transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .kind__opt:hover .kind__card { border-color: var(--c-field-line-hover); }
+  .kind__icon { flex: none; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--c-bg-soft); color: var(--c-muted); transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .kind__text { flex: 1; display: grid; line-height: 1.3; min-width: 0; }
+  .kind__label { font-weight: 650; color: var(--c-ink); }
+  .kind__sub { font-size: 0.8125rem; color: var(--c-muted); }
+  .kind__tick { flex: none; display: grid; place-items: center; width: 1.35rem; height: 1.35rem; border-radius: 50%; border: 1.5px solid var(--c-field-line); color: transparent; transition: all var(--dur) var(--ease); }
+  .kind__opt input:checked + .kind__card { border-color: var(--c-primary); background: var(--c-primary-soft); box-shadow: inset 0 0 0 1px var(--c-primary); }
+  .kind__opt input:checked + .kind__card .kind__icon { background: var(--c-primary); color: #fff; }
+  .kind__opt input:checked + .kind__card .kind__tick { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+  .kind__opt input:focus-visible + .kind__card { outline: 3px solid var(--c-primary); outline-offset: 2px; }
+
+  /* Numbered sections */
+  .step { display: grid; gap: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--c-line); }
+  /* The legend sits on the section's top rule; the padding gives the rule a gap after the text. */
+  .step__legend { display: flex; align-items: center; gap: 0.65rem; padding: 0 0.75rem 0 0; margin: 0; font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--c-ink); }
+  .step__num { display: grid; place-items: center; width: 1.85rem; height: 1.85rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary-strong); font-family: var(--font-body); font-size: 0.875rem; font-weight: 700; }
+  .step__grid { display: grid; gap: 1.15rem 1.25rem; }
+  @media (min-width: 640px) { .step__grid { grid-template-columns: 1fr 1fr; } .span-2 { grid-column: 1 / -1; } }
+
+  .chip { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0.4rem 1rem; border: 1.5px solid var(--c-field-line); border-radius: 999px; background: #fff; color: var(--c-text); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all var(--dur) var(--ease); }
+  .chip:hover { border-color: var(--c-primary); color: var(--c-primary); }
+  .chip[aria-pressed='true'] { background: var(--c-primary); border-color: var(--c-primary); color: #fff; }
+
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-  .form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; }
-  .form__note { font-size: 0.875rem; color: var(--c-muted); }
-  .form__status:empty { display: none; }
-  .form__status { padding: 1rem 1.15rem; border-radius: var(--radius-sm); border: 1px solid; font-weight: 500; }
-  .form__status[data-state='success'] { background: var(--c-success-soft); border-color: #9bd2b2; color: #0b4a2a; }
-  .form__status[data-state='error'] { background: var(--c-danger-soft); border-color: #f1b0aa; color: #7a1a12; }
-  .form__status[data-state='demo'] { background: var(--c-draft-soft); border-color: #f0d58a; color: #5c3d00; }
-  .form__status a { color: inherit; font-weight: 650; }
-  .cf__noscript { padding: 1rem 1.5rem; background: var(--c-draft-soft); color: #5c3d00; }
+
+  /* Status: validation summary, demo notice, delivery errors */
+  .status:empty { display: none; }
+  .status { display: flex; gap: 0.8rem; align-items: flex-start; padding: 1rem 1.15rem; border-radius: 0.9rem; border: 1px solid; line-height: 1.5; }
+  .status::before { content: ''; flex: none; width: 1.3rem; height: 1.3rem; margin-top: 0.1rem; background: currentColor; -webkit-mask: var(--icon-alert) center / contain no-repeat; mask: var(--icon-alert) center / contain no-repeat; }
+  .status[data-state='error'] { background: var(--c-danger-soft); border-color: #f1b0aa; color: #7a1a12; }
+  .status[data-state='demo'] { background: var(--c-notice-soft); border-color: #f0d58a; color: #5c3d00; }
+  .status :global(a) { color: inherit; font-weight: 650; }
+  .status :global(p + p) { margin-top: 0.35rem; }
+  .status :global(.status__retry) { margin-top: 0.7rem; min-height: 2.75rem; padding: 0.45rem 1.1rem; border: 1.5px solid currentColor; border-radius: 999px; background: #fff; color: inherit; font-weight: 650; cursor: pointer; }
+  .status :global(.status__retry:hover) { background: rgb(255 255 255 / 0.6); }
+
+  /* Actions + loading state */
+  .bk__actions { display: grid; gap: 0.9rem; }
+  .bk__submit { position: relative; width: 100%; min-height: 3.5rem; font-size: 1.0625rem; box-shadow: 0 10px 24px -10px rgb(11 95 165 / 0.6); }
+  .bk__submit:hover .bk__arrow { transform: translateX(3px); }
+  .bk__arrow { display: grid; transition: transform var(--dur) var(--ease); }
+  .bk__spinner { display: none; width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 2.5px solid rgb(255 255 255 / 0.4); border-top-color: #fff; animation: bk-spin 0.8s linear infinite; }
+  .bk__submit[aria-busy='true'] .bk__spinner { display: block; }
+  .bk__submit[aria-busy='true'] .bk__arrow { display: none; }
+  .bk__submit[disabled] { opacity: 0.85; }
+  @keyframes bk-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .bk__spinner { animation-duration: 1.6s !important; } }
+  @media (min-width: 640px) { .bk__actions { grid-template-columns: auto 1fr; align-items: center; gap: 1.5rem; } .bk__submit { width: auto; padding-inline: 2rem; } }
+  .bk__fine { font-size: 0.875rem; color: var(--c-muted); line-height: 1.5; }
+  .bk__fine .req { color: var(--c-accent); font-weight: 700; }
+
+  /* Success */
+  .done { display: grid; justify-items: center; gap: 1rem; text-align: center; padding-block: clamp(2.5rem, 2rem + 3vw, 4rem); }
+  .done__icon { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%; background: var(--c-success); color: #fff; box-shadow: 0 0 0 10px var(--c-success-soft); margin-bottom: 0.5rem; animation: done-pop 420ms var(--ease) both; }
+  @keyframes done-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .done h2 { font-size: clamp(1.6rem, 1.3rem + 1.2vw, 2.1rem); }
+  .done h2:focus { outline: none; }
+  .done__lead { max-width: 34rem; color: var(--c-text); font-size: var(--fs-500); }
+  .done__summary { width: 100%; max-width: 30rem; margin: 0.5rem 0; padding: 0.4rem 1.25rem; display: grid; text-align: left; background: var(--c-bg-soft); border: 1px solid var(--c-line); border-radius: 1rem; }
+  .done__summary :global(div) { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem 0; }
+  .done__summary :global(div + div) { border-top: 1px solid var(--c-line); }
+  .done__summary :global(dt) { color: var(--c-muted); font-size: 0.9375rem; }
+  .done__summary :global(dd) { margin: 0; font-weight: 620; color: var(--c-ink); text-align: right; overflow-wrap: anywhere; }
+  .done__urgent { color: var(--c-muted); font-size: 0.9375rem; }
+  .done__urgent a { font-weight: 650; }
+
+  .bk__noscript { margin: 0 clamp(1.25rem, 0.8rem + 2.4vw, 2.5rem) 2rem; padding: 1rem 1.25rem; border-radius: 0.9rem; background: var(--c-notice-soft); color: #5c3d00; }
 </style>
 
 <script>
   import { isSpam, todayISO, validateForm, type FormKind, type FormValues } from '../../lib/validation';
-  import { submitForm } from '../../lib/submit';
+  import { requestTypeLabel, submitForm } from '../../lib/submit';
+  import { formatISODateLong } from '../../lib/format';
 
   const root = document.querySelector<HTMLElement>('[data-contact-forms]');
   if (root) init(root);
@@ -114,117 +221,205 @@ const tabs = [
       phone: root.dataset.phone ?? '',
       phoneTel: root.dataset.phoneTel ?? '',
       email: root.dataset.email ?? '',
+      whatsapp: root.dataset.whatsapp ?? '',
     };
+    const form = root.querySelector<HTMLFormElement>('form[data-form]')!;
+    const status = form.querySelector<HTMLElement>('[data-status]')!;
+    const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const submitText = submitBtn.querySelector<HTMLElement>('[data-submit-text]')!;
+    const success = root.querySelector<HTMLElement>('[data-success]')!;
+    const dateInput = form.querySelector<HTMLInputElement>('input[name="date"]')!;
+    const dateField = dateInput.closest<HTMLElement>('[data-field]')!;
+    const radios = Array.from(form.querySelectorAll<HTMLInputElement>('input[name="kind"]'));
+    const today = todayISO();
+    let sending = false;
 
-    /* ---------- Tabs (WAI-ARIA tabs pattern with arrow-key support) ---------- */
-    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
-    const panels = Array.from(root.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
-    const select = (id: string, focus = false) => {
-      tabs.forEach((t) => {
-        const on = t.dataset.tab === id;
-        t.setAttribute('aria-selected', String(on));
-        t.tabIndex = on ? 0 : -1;
-        if (on && focus) t.focus();
-      });
-      panels.forEach((p) => (p.hidden = p.dataset.panel !== id));
+    const kind = (): FormKind => (form.dataset.kind as FormKind) ?? 'enquiry';
+    const submitLabel = () => radios.find((r) => r.checked)?.dataset.submitLabel ?? 'Send';
+
+    /* ---------- Request type ---------- */
+    function setKind(k: FormKind, fromUser = false) {
+      form.dataset.kind = k;
+      radios.forEach((r) => (r.checked = r.value === k));
+      const booking = k === 'booking';
+      dateInput.required = booking;
+      dateField.toggleAttribute('data-required', booking);
+      if (!sending) submitText.textContent = submitLabel();
+      // Keep an existing date error in step with the new rule.
+      if (fromUser && dateInput.getAttribute('aria-invalid') === 'true') checkField('date');
+    }
+    radios.forEach((r) => r.addEventListener('change', () => setKind(r.value as FormKind, true)));
+    const fromHash = () => {
+      if (location.hash === '#book-a-service') setKind('booking');
+      else if (location.hash === '#make-an-enquiry') setKind('enquiry');
     };
-    tabs.forEach((t, i) => {
-      t.addEventListener('click', () => select(t.dataset.tab!));
-      t.addEventListener('keydown', (e) => {
-        const k = e.key;
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(k)) return;
-        e.preventDefault();
-        const next = k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : (i + (k === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-        select(tabs[next].dataset.tab!, true);
-      });
-    });
-    const fromHash = () => { if (location.hash === '#book-a-service') select('booking'); else if (location.hash === '#make-an-enquiry') select('enquiry'); };
     fromHash();
     window.addEventListener('hashchange', fromHash);
 
-    /* ---------- Forms ---------- */
-    const today = todayISO();
-    const params = new URLSearchParams(location.search);
-    const preService = params.get('service');
+    /* ---------- ?service=<slug> pre-selects a service ---------- */
+    const preService = new URLSearchParams(location.search).get('service');
+    if (preService) {
+      const opt = form.querySelector<HTMLOptionElement>(`option[data-slug="${CSS.escape(preService)}"]`);
+      if (opt) {
+        const sel = opt.closest('select')!;
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
 
-    root.querySelectorAll<HTMLFormElement>('form[data-form]').forEach((form) => {
-      const kind = form.dataset.kind as FormKind;
-      const status = form.querySelector<HTMLElement>('[data-status]')!;
-      const submitBtn = form.querySelector<HTMLButtonElement>('[data-submit]')!;
-      const dateInput = form.querySelector<HTMLInputElement>('input[type="date"]');
-      if (dateInput) dateInput.min = today;
+    /* ---------- Date: never in the past; quick picks ---------- */
+    dateInput.min = today;
+    const chips = Array.from(form.querySelectorAll<HTMLButtonElement>('[data-date-offset]'));
+    const offsetISO = (days: number) => { const d = new Date(); d.setDate(d.getDate() + days); return todayISO(d); };
+    const syncChips = () => chips.forEach((c) => c.setAttribute('aria-pressed', String(dateInput.value === offsetISO(Number(c.dataset.dateOffset)))));
+    chips.forEach((c) => c.addEventListener('click', () => {
+      dateInput.value = offsetISO(Number(c.dataset.dateOffset));
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+      syncChips();
+    }));
+    dateInput.addEventListener('input', syncChips);
+    dateInput.addEventListener('change', syncChips);
 
-      if (preService) {
-        const opt = form.querySelector<HTMLOptionElement>(`option[data-slug="${CSS.escape(preService)}"]`);
-        if (opt) (opt.parentElement as HTMLSelectElement).value = opt.value;
+    /* ---------- Notes character counter ---------- */
+    form.querySelectorAll<HTMLTextAreaElement>('textarea[data-counted]').forEach((ta) => {
+      const out = ta.closest('[data-field]')?.querySelector<HTMLElement>('[data-count]');
+      if (!out) return;
+      const max = Number(out.dataset.count);
+      const update = () => { out.textContent = `${ta.value.length} / ${max}`; out.toggleAttribute('data-near', ta.value.length > max * 0.9); };
+      ta.addEventListener('input', update);
+      form.addEventListener('reset', () => setTimeout(update));
+      update();
+    });
+
+    /* ---------- Validation ---------- */
+    const read = (): FormValues => {
+      const fd = new FormData(form);
+      const g = (k: string) => String(fd.get(k) ?? '');
+      return { fullName: g('fullName'), email: g('email'), phone: g('phone'), city: g('city'), service: g('service'), date: g('date'), package: g('package'), message: g('message'), botcheck: g('botcheck') };
+    };
+    const run = () => validateForm(read(), { kind: kind(), allowedServices: cfg.services, allowedPackages: cfg.packages, today }) as Record<string, string | undefined>;
+    const fields = Array.from(form.querySelectorAll<HTMLElement>('[data-field]'));
+    const names = fields.map((f) => f.dataset.field!);
+    const controlOf = (wrap: HTMLElement) => wrap.querySelector<HTMLElement>('input, select, textarea')!;
+    const focusTargetOf = (wrap: HTMLElement) => {
+      const custom = wrap.querySelector<HTMLElement>('[data-focus-target]');
+      return custom && custom.offsetParent !== null ? custom : controlOf(wrap);
+    };
+
+    function showError(name: string, msg?: string) {
+      const wrap = form.querySelector<HTMLElement>(`[data-field="${name}"]`);
+      if (!wrap) return;
+      wrap.querySelector<HTMLElement>('[data-error]')!.textContent = msg ?? '';
+      const ctrl = controlOf(wrap);
+      if (msg) ctrl.setAttribute('aria-invalid', 'true'); else ctrl.removeAttribute('aria-invalid');
+    }
+    const checkField = (name: string) => showError(name, run()[name]);
+
+    // Check a field when the user leaves it; while it is invalid, re-check as they type.
+    fields.forEach((wrap) => {
+      const name = wrap.dataset.field!;
+      wrap.addEventListener('focusout', (e) => {
+        if (wrap.contains(e.relatedTarget as Node | null)) return;
+        // The service picker keeps focus on its trigger while its list is open.
+        if (wrap.querySelector('[data-open]') || wrap.hasAttribute('data-open')) return;
+        if (name === 'service' && !read().service) return; // just browsing the list: judge on submit
+        checkField(name);
+      });
+      const recheck = () => { if (controlOf(wrap).getAttribute('aria-invalid') === 'true') checkField(name); };
+      wrap.addEventListener('input', recheck);
+      wrap.addEventListener('change', recheck);
+    });
+
+    /* ---------- Status messages ---------- */
+    const contactLine = () => `call <a href="${cfg.phoneTel}">${cfg.phone}</a>, <a href="${cfg.whatsapp}" target="_blank" rel="noopener noreferrer">WhatsApp us</a> or email <a href="mailto:${cfg.email}">${cfg.email}</a>`;
+    const setStatus = (state: 'error' | 'demo' | '', html = '') => { status.dataset.state = state; status.innerHTML = html ? `<div>${html}</div>` : ''; };
+    status.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-retry]')) form.requestSubmit();
+    });
+
+    /* ---------- Success ---------- */
+    function showSuccess(values: FormValues, k: FormKind) {
+      const first = values.fullName.trim().split(/\s+/)[0] ?? '';
+      success.querySelector('[data-success-title]')!.textContent = first ? `Thank you, ${first}` : 'Thank you';
+      success.querySelector('[data-success-text]')!.textContent =
+        `Your ${k === 'booking' ? 'booking request' : 'enquiry'} has reached our team. We will call you on ${values.phone.trim()} to talk through the care you need.`;
+      const rows: [string, string][] = [
+        ['Request', requestTypeLabel(k)],
+        ['Service', values.service],
+        ...(values.date ? [[k === 'booking' ? 'Start date' : 'Preferred date', formatISODateLong(values.date)] as [string, string]] : []),
+        ['We will call', values.phone.trim()],
+      ];
+      const dl = success.querySelector<HTMLElement>('[data-success-summary]')!;
+      dl.replaceChildren(...rows.map(([dt, dd]) => {
+        const row = document.createElement('div');
+        const a = document.createElement('dt'); a.textContent = dt;
+        const b = document.createElement('dd'); b.textContent = dd;
+        row.append(a, b);
+        return row;
+      }));
+      form.hidden = true;
+      success.hidden = false;
+      success.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      success.querySelector<HTMLElement>('[data-success-title]')!.focus({ preventScroll: true });
+    }
+    success.querySelector('[data-again]')!.addEventListener('click', () => {
+      success.hidden = true;
+      form.hidden = false;
+      form.querySelector<HTMLElement>('[data-focus-target], input:not([type="radio"]):not([type="checkbox"])')?.focus();
+    });
+    function resetForm() {
+      const k = kind();
+      form.reset();
+      names.forEach((n) => showError(n));
+      setStatus('');
+      setKind(k);
+      syncChips();
+    }
+
+    /* ---------- Submit ---------- */
+    function setBusy(busy: boolean) {
+      sending = busy;
+      submitBtn.disabled = busy;
+      submitBtn.setAttribute('aria-busy', String(busy));
+      form.setAttribute('aria-busy', String(busy));
+      submitText.textContent = busy ? 'Sending…' : submitLabel();
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (sending) return; // no duplicate requests
+      setStatus('');
+      const values = read();
+      const k = kind();
+
+      // Honeypot ticked: a bot. Look successful, send nothing.
+      if (isSpam(values)) { showSuccess(values, k); resetForm(); return; }
+
+      const errors = run();
+      names.forEach((n) => showError(n, errors[n]));
+      const bad = names.filter((n) => errors[n]);
+      if (bad.length) {
+        setStatus('error', `<p><strong>Please check ${bad.length === 1 ? 'the highlighted field' : `the ${bad.length} highlighted fields`}.</strong></p>`);
+        focusTargetOf(form.querySelector<HTMLElement>(`[data-field="${bad[0]}"]`)!).focus();
+        return;
       }
 
-      const read = (): FormValues => {
-        const fd = new FormData(form);
-        const g = (k: string) => String(fd.get(k) ?? '');
-        return { fullName: g('fullName'), email: g('email'), phone: g('phone'), city: g('city'), service: g('service'), date: g('date'), package: g('package'), message: g('message'), website: g('website') };
-      };
-      const run = () => validateForm(read(), { kind, allowedServices: cfg.services, allowedPackages: cfg.packages, today });
+      setBusy(true);
+      const result = await submitForm(k, values, { endpoint: cfg.endpoint, accessKey: cfg.accessKey });
+      setBusy(false);
 
-      const showError = (name: string, msg?: string) => {
-        const wrap = form.querySelector<HTMLElement>(`[data-field="${name}"]`);
-        if (!wrap) return;
-        const ctrl = wrap.querySelector<HTMLElement>('input,select,textarea')!;
-        wrap.querySelector<HTMLElement>('[data-error]')!.textContent = msg ?? '';
-        if (msg) ctrl.setAttribute('aria-invalid', 'true'); else ctrl.removeAttribute('aria-invalid');
-      };
-      const names = Array.from(form.querySelectorAll<HTMLElement>('[data-field]')).map((f) => f.dataset.field!);
-
-      // Validate a field when the user leaves it, and keep re-checking while it is invalid.
-      form.querySelectorAll<HTMLElement>('input,select,textarea').forEach((ctrl) => {
-        const name = (ctrl as HTMLInputElement).name;
-        if (!names.includes(name)) return;
-        const check = () => showError(name, (run() as Record<string, string>)[name]);
-        ctrl.addEventListener('blur', check);
-        ctrl.addEventListener('input', () => { if (ctrl.getAttribute('aria-invalid') === 'true') check(); });
-        ctrl.addEventListener('change', () => { if (ctrl.getAttribute('aria-invalid') === 'true') check(); });
-      });
-
-      const setStatus = (state: 'success' | 'error' | 'demo' | '', html = '') => {
-        status.dataset.state = state;
-        status.innerHTML = html;
-      };
-      const contactLine = `call <a href="${cfg.phoneTel}">${cfg.phone}</a> or email <a href="mailto:${cfg.email}">${cfg.email}</a>`;
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        setStatus('');
-        const values = read();
-
-        // Honeypot: bots fill hidden fields. Pretend success, send nothing.
-        if (isSpam(values)) { setStatus('success', 'Thank you. Your message has been received.'); form.reset(); return; }
-
-        const errors = run() as Record<string, string | undefined>;
-        names.forEach((n) => showError(n, errors[n]));
-        const firstBad = names.find((n) => errors[n]);
-        if (firstBad) {
-          setStatus('error', `Please correct ${Object.keys(errors).length === 1 ? 'the highlighted field' : 'the highlighted fields'} and try again.`);
-          form.querySelector<HTMLElement>(`[data-field="${firstBad}"] input, [data-field="${firstBad}"] select, [data-field="${firstBad}"] textarea`)?.focus();
-          return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending…';
-        const result = await submitForm(kind, values, { endpoint: cfg.endpoint, accessKey: cfg.accessKey });
-        submitBtn.disabled = false;
-        submitBtn.textContent = submitBtn.dataset.label ?? 'Send';
-
-        if (result.status === 'sent') {
-          setStatus('success', `<strong>Thank you, ${escapeHtml(values.fullName.split(' ')[0])}.</strong> Your ${kind === 'booking' ? 'booking request' : 'enquiry'} has been sent. We will contact you on the phone number or email you provided.`);
-          form.reset();
-          names.forEach((n) => showError(n));
-        } else if (result.status === 'demo') {
-          setStatus('demo', `<strong>Demo mode: nothing was sent.</strong> This form is not connected to an inbox yet. To reach us now, ${contactLine}.`);
-        } else {
-          setStatus('error', `<strong>Sorry, we could not send your ${kind === 'booking' ? 'request' : 'enquiry'}.</strong> ${escapeHtml(result.message)} Please try again, or ${contactLine}.`);
-        }
+      if (result.status === 'sent') {
+        showSuccess(values, k);
+        resetForm();
+      } else if (result.status === 'demo') {
+        setStatus('demo', `<p><strong>Demo mode: nothing was sent.</strong> This form is not connected to an inbox yet. Your details are still here. To reach us now, ${contactLine()}.</p>`);
+      } else {
+        setStatus('error',
+          `<p><strong>Sorry, your ${k === 'booking' ? 'booking request' : 'enquiry'} was not sent.</strong> ${escapeHtml(result.message)} Your details are still filled in, so you can try again.</p>` +
+          `<p>If it keeps failing, please ${contactLine()}.</p>` +
+          `<button type="button" class="status__retry" data-retry>Try again</button>`);
         status.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      });
+      }
     });
   }
 

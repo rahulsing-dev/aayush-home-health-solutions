@@ -1,37 +1,64 @@
 ---
+/**
+ * "Our office(s)": heading plus one card per office (config/site.ts `offices`), each with a
+ * "Get directions" link to Google Maps. With a single office the heading sits beside the card on
+ * wide screens; with more, the cards form a grid under the heading.
+ */
 import Icon from '../ui/Icon.astro';
-import { offices, telHref } from '../../config/site';
+import SectionHead from '../ui/SectionHead.astro';
+import { addressOneLine, offices, telHref } from '../../config/site';
+
+interface Props { id: string; eyebrow?: string }
+const { id, eyebrow = 'Where to find us' } = Astro.props;
+const single = offices.length === 1;
+const directionsHref = (address: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 ---
-<ul role="list" class:list={['offices', offices.length === 1 && 'offices--single']}>
-  {offices.map((o) => (
-    <li>
-      <address class="office">
-        <span class="office__icon"><Icon name="map-pin" size={22} /></span>
-        <h3>{o.name}</h3>
-        <p>{o.addressLines.map((l) => <span>{l}</span>)}</p>
-        {o.contacts.length > 0 && (
-          <ul role="list" class="office__people">
-            {o.contacts.map((c) => (
-              <li>{c.name && <span>{c.name}</span>}<span class="office__nums">{c.phones.map((ph) => <a href={telHref(ph)}>{ph}</a>)}</span></li>
-            ))}
-          </ul>
-        )}
-      </address>
-    </li>
-  ))}
-</ul>
+<div class:list={['visit', single && 'visit--single']}>
+  <SectionHead
+    {id}
+    {eyebrow}
+    title={single ? 'Our office' : 'Our offices'}
+    text={single ? 'Care is provided in your own home. This is where our team is based.' : undefined}
+  />
+  <ul role="list" class:list={['offices', single && 'offices--single']}>
+    {offices.map((o) => (
+      <li>
+        <address class="office">
+          <span class="office__icon"><Icon name="map-pin" size={22} /></span>
+          <h3>{o.name}</h3>
+          <p>{o.addressLines.map((l) => <span>{l}</span>)}</p>
+          {o.contacts.length > 0 && (
+            <ul role="list" class="office__people">
+              {o.contacts.map((c) => (
+                <li>{c.name && <span>{c.name}</span>}<span class="office__nums">{c.phones.map((ph) => <a href={telHref(ph)}>{ph}</a>)}</span></li>
+              ))}
+            </ul>
+          )}
+          <a class="link-arrow office__map" href={directionsHref(addressOneLine(o))} target="_blank" rel="noopener noreferrer">
+            Get directions<span class="sr-only"> to the {o.name} (opens Google Maps)</span> <Icon name="arrow-right" size={18} />
+          </a>
+        </address>
+      </li>
+    ))}
+  </ul>
+</div>
 
 <style>
+  .visit :global(.section-head) { margin-bottom: clamp(1.5rem, 1rem + 1.5vw, 2.5rem); }
+  @media (min-width: 900px) {
+    .visit--single { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4rem; align-items: center; }
+    .visit--single :global(.section-head) { margin-bottom: 0; }
+  }
   .offices { display: grid; gap: 1.25rem; list-style: none; padding: 0; margin: 0; }
   @media (min-width: 720px) { .offices:not(.offices--single) { grid-template-columns: repeat(3, 1fr); } }
-  .offices--single { max-width: 34rem; }
-  .office { height: 100%; display: grid; gap: 0.6rem; align-content: start; font-style: normal; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); }
+  .office { height: 100%; display: grid; gap: 0.6rem; align-content: start; justify-items: start; font-style: normal; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
   .office__icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary); }
   .office h3 { font-family: var(--font-body); font-size: 1.0625rem; font-weight: 650; letter-spacing: 0; }
   .office p span { display: block; color: var(--c-muted); }
-  .office__people { list-style: none; margin: 0.4rem 0 0; padding: 0.75rem 0 0; border-top: 1px solid var(--c-line); display: grid; gap: 0.4rem; }
+  .office__people { justify-self: stretch; list-style: none; margin: 0.4rem 0 0; padding: 0.75rem 0 0; border-top: 1px solid var(--c-line); display: grid; gap: 0.4rem; }
   .office__people li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; font-size: 0.9375rem; }
   .office__people > li > span:first-child { color: var(--c-ink); font-weight: 550; }
   .office__nums { display: grid; text-align: right; }
-  .office a { white-space: nowrap; }
+  .office__nums a { white-space: nowrap; }
+  .office__map { min-height: 2.75rem; margin-top: 0.15rem; }
 </style>

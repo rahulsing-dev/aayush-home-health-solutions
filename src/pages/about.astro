@@ -4,56 +4,92 @@ import PageHeader from '../components/layout/PageHeader.astro';
 import SectionHead from '../components/ui/SectionHead.astro';
 import Media from '../components/ui/Media.astro';
 import Icon from '../components/ui/Icon.astro';
+import QuoteBlock from '../components/ui/QuoteBlock.astro';
+import CareGallery from '../components/sections/CareGallery.astro';
 import OfficeCards from '../components/sections/OfficeCards.astro';
 import CtaBand from '../components/sections/CtaBand.astro';
 import { about } from '../content/pages';
-import { offices, site } from '../config/site';
+import { site } from '../config/site';
+
+const f = about.founder;
+const facts = [
+  { icon: 'calendar', label: 'Founded', value: site.foundedLabel },
+  { icon: 'map-pin', label: 'Headquarters', value: 'Bangalore' },
+  { icon: 'clock', label: 'Availability', value: 'Reachable 24/7' },
+] as const;
 ---
 <BaseLayout title="About Us" description="Aayush Home Health Solutions is a Bangalore based home health service agency founded by Santosh Kumar Singh in February 2020.">
-  <PageHeader title="About Us" eyebrow="Who we are" intro={about.story[0]} crumbs={[{ label: 'About Us' }]} />
+  <PageHeader title={about.headline} eyebrow="About Us" intro={about.story[0]} crumbs={[{ label: 'About Us' }]}>
+    <a class="btn btn--primary hdr-cta" href="#story">Read our story</a>
+    <div slot="aside" class="hdr-visual">
+      <div class="hdr-visual__main"><Media image={about.headerImage} eager sizes="(min-width: 1200px) 400px, (min-width: 960px) 34vw, (min-width: 520px) 24rem, 82vw" /></div>
+      <p class="hdr-visual__chip"><Icon name="heart" size={16} /> {site.tagline}</p>
+    </div>
+  </PageHeader>
 
-  <section class="section" aria-labelledby="story-h">
+  <section class="section" id="story" aria-labelledby="story-h">
     <div class="container story">
-      <div class="story__copy prose">
+      <div class="story__copy reveal">
+        <p class="eyebrow">How it began</p>
         <h2 id="story-h">Our story</h2>
-        <p>{about.story[1]}</p>
+        <p class="lead">{about.story[1]}</p>
         <p>{about.story[2]}</p>
       </div>
-      <dl class="facts">
-        <div><dt>Founded</dt><dd>{site.foundedLabel}</dd></div>
-        <div><dt>Headquarters</dt><dd>Bangalore</dd></div>
-        <div><dt>Availability</dt><dd>Reachable 24/7</dd></div>
+      <dl class="facts reveal" style="--reveal-delay:100ms">
+        {facts.map((x) => (
+          <div><dt><span class="facts__icon"><Icon name={x.icon} size={20} /></span>{x.label}</dt><dd>{x.value}</dd></div>
+        ))}
       </dl>
+    </div>
+  </section>
+
+  <section class="section section--warm" aria-labelledby="moments-h">
+    <div class="container">
+      <SectionHead center id="moments-h" eyebrow="Moments of care" title="The people behind the care" text="Everyday moments with the elders and families we care for: companionship, patience, dignity and plenty of smiles." />
+      <CareGallery />
+    </div>
+  </section>
+
+  <section class="heritage" aria-label="A value we live by">
+    <div class="container reveal">
+      <QuoteBlock variant="band" quote={about.heritageQuote} />
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="founder-h">
+    <div class="container founder">
+      <div class="founder__media reveal">
+        <Media image={f.image} sizes="(min-width: 1200px) 420px, (min-width: 900px) 36vw, (min-width: 520px) 24rem, 88vw" />
+        <p class="founder__badge"><Icon name="award" size={18} /> {f.badge}</p>
+      </div>
+      <div class="founder__copy reveal" style="--reveal-delay:100ms">
+        <p class="eyebrow">Meet the founder</p>
+        <h2 id="founder-h">{f.name}</h2>
+        <p class="founder__role">{f.role}</p>
+        <QuoteBlock variant="pull" quote={{ text: f.quote, author: f.name }} showAuthor={false} />
+        {f.bio.map((p) => <p>{p}</p>)}
+      </div>
     </div>
   </section>
 
   <section class="section section--soft" aria-labelledby="values-h">
     <div class="container">
       <SectionHead center id="values-h" eyebrow="What guides us" title="The Aayush ethos" />
-      <ul role="list" class="values">
-        {about.principles.map((p) => (
-          <li class="reveal"><span class="values__icon"><Icon name={p.icon} size={26} /></span><h3>{p.title}</h3><p>{p.text}</p></li>
+      <ol role="list" class="values">
+        {about.principles.map((p, i) => (
+          <li class="reveal" style={`--reveal-delay:${i * 90}ms`}>
+            <span class="values__icon"><Icon name={p.icon} size={26} /></span>
+            <h3>{p.title}</h3>
+            <p>{p.text}</p>
+          </li>
         ))}
-      </ul>
+      </ol>
     </div>
   </section>
 
-  <section class="section" aria-labelledby="founder-h">
-    <div class="container founder">
-      <div class="founder__media reveal"><Media image={about.founder.image} /></div>
-      <div class="founder__copy reveal" style="--reveal-delay:100ms">
-        <p class="eyebrow">Meet the founder</p>
-        <h2 id="founder-h">{about.founder.name}</h2>
-        <p class="founder__role">{about.founder.role}</p>
-        {about.founder.bio.map((p) => <p>{p}</p>)}
-      </div>
-    </div>
-  </section>
-
-  <section class="section section--soft" aria-labelledby="off-h">
+  <section class="section" aria-labelledby="off-h">
     <div class="container">
-      <SectionHead id="off-h" eyebrow="Where to find us" title={offices.length > 1 ? 'Our offices' : 'Our office'} />
-      <OfficeCards />
+      <OfficeCards id="off-h" />
     </div>
   </section>
 
@@ -61,22 +97,53 @@ import { offices, site } from '../config/site';
 </BaseLayout>
 
 <style>
+  /* A barely-there fade on every photo and the clip on this page: slightly softer colour, contrast and tone,
+     with natural skin tones kept. Scoped to this page's own markup, so other pages are unaffected;
+     the source files are untouched. */
+  .hdr-visual :global(img), section :global(img), section :global(video) { filter: saturate(0.92) contrast(0.95) brightness(1.03); }
+
+  /* Header: the team's photo on an offset plate with the tagline chip (same pattern as /why-aayush). */
+  .hdr-cta { justify-self: start; margin-top: 0.5rem; }
+  .hdr-visual { position: relative; width: min(100%, 24rem); margin: 0 auto 1.5rem; }
+  .hdr-visual__main { position: relative; }
+  .hdr-visual__main::before { content: ''; position: absolute; inset: 1rem -0.75rem -0.75rem 1rem; border-radius: 2rem; background: linear-gradient(140deg, var(--c-bg-warm), var(--c-primary-tint)); }
+  .hdr-visual__main :global(.media) { position: relative; border-radius: 1.75rem; box-shadow: var(--shadow-lg); }
+  .hdr-visual__chip { position: absolute; top: 1.25rem; right: -0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.95rem; border-radius: 999px; background: #fff; color: var(--c-ink); font-weight: 650; font-size: var(--fs-300); box-shadow: var(--shadow-md); }
+  .hdr-visual__chip :global(svg) { color: var(--c-accent); }
+  @media (min-width: 960px) { .hdr-visual { width: 100%; max-width: 25rem; margin: 0 0 1.5rem auto; } .hdr-visual__chip { right: -1.25rem; } }
+
   .story { display: grid; gap: 2.5rem; align-items: start; }
+  .story__copy { display: grid; gap: 1rem; max-width: 42rem; }
   .story__copy h2 { margin-bottom: 0.25rem; }
-  .facts { display: grid; gap: 0; margin: 0; background: var(--c-bg-soft); border-radius: var(--radius-lg); padding: 0.5rem 1.5rem; }
-  .facts > div { display: grid; gap: 0.15rem; padding: 1.1rem 0; }
+  .facts { position: relative; display: grid; margin: 0; padding: 0.5rem 1.5rem; border-radius: var(--radius-lg); background: linear-gradient(160deg, var(--c-primary-soft), var(--c-bg-soft) 60%, #fff); border: 1px solid var(--c-line); overflow: hidden; }
+  .facts::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--c-primary), var(--c-secondary)); }
+  .facts > div { position: relative; display: grid; gap: 0.1rem; padding: 1.15rem 0 1.15rem 3.75rem; }
   .facts > div + div { border-top: 1px solid var(--c-line); }
+  .facts__icon { position: absolute; left: 0; top: 50%; translate: 0 -50%; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: #fff; color: var(--c-primary); box-shadow: var(--shadow-sm); }
   .facts dt { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c-muted); font-weight: 600; }
   .facts dd { margin: 0; font-weight: 650; color: var(--c-ink); font-size: 1.0625rem; }
-  @media (min-width: 900px) { .story { grid-template-columns: 1.3fr 0.7fr; gap: 4rem; } }
-  .values { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5rem; }
-  .values li { display: grid; gap: 0.75rem; align-content: start; padding: 1.75rem 1.5rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--c-line); }
-  .values__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--c-secondary-soft); color: var(--c-secondary); }
-  .values p { color: var(--c-muted); }
-  @media (min-width: 760px) { .values { grid-template-columns: repeat(3, 1fr); } }
-  .founder { display: grid; gap: 2.25rem; align-items: center; }
-  .founder__media { max-width: 24rem; }
-  .founder__copy { display: grid; gap: 1rem; max-width: 44rem; }
+  @media (min-width: 900px) { .story { grid-template-columns: 1.3fr 0.7fr; gap: 4rem; } .facts { margin-top: 2.5rem; } }
+
+  .heritage { position: relative; overflow: hidden; padding-block: clamp(3.5rem, 2.5rem + 4vw, 6rem); background: radial-gradient(30rem 18rem at 10% 0%, rgb(255 255 255 / 0.9), transparent 70%), radial-gradient(36rem 22rem at 95% 100%, var(--c-secondary-soft), transparent 70%), linear-gradient(135deg, var(--c-primary-soft), var(--c-bg-warm)); border-block: 1px solid var(--c-line); }
+
+  .founder { display: grid; gap: 2.75rem; align-items: center; }
+  .founder__media { position: relative; width: min(100%, 24rem); margin-inline: auto; }
+  .founder__media::before { content: ''; position: absolute; inset: -0.9rem 1.1rem 1.1rem -0.9rem; border-radius: calc(var(--radius-lg) + 0.5rem); background: linear-gradient(140deg, var(--c-bg-warm), var(--c-primary-tint)); }
+  .founder__media :global(.media) { position: relative; box-shadow: var(--shadow-lg); }
+  .founder__badge { position: absolute; left: 50%; bottom: -1.1rem; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.55rem 1.1rem; border-radius: 999px; background: var(--c-navy); color: #fff; font-weight: 650; font-size: var(--fs-300); white-space: nowrap; box-shadow: var(--shadow-md); }
+  .founder__copy { display: grid; gap: 1rem; max-width: 42rem; }
   .founder__role { font-weight: 650; color: var(--c-primary); margin-top: -0.5rem; }
-  @media (min-width: 900px) { .founder { grid-template-columns: 0.7fr 1.3fr; gap: 4.5rem; } .founder__media { max-width: none; } }
+  .founder__copy :global(.quote) { margin-block: 0.5rem; }
+  @media (min-width: 900px) { .founder { grid-template-columns: 0.75fr 1.25fr; gap: 5rem; } .founder__media { width: 100%; } }
+
+  .values { display: grid; gap: 1.25rem; counter-reset: value; }
+  /* `translate` (not `transform`) so the hover lift does not fight the scroll-reveal transform. */
+  .values li { counter-increment: value; position: relative; display: grid; gap: 0.75rem; align-content: start; padding: 2rem 1.5rem 1.75rem; background: #fff; border-radius: var(--radius-lg); border: 1px solid var(--c-line); box-shadow: var(--shadow-sm); transition: opacity 600ms var(--ease) var(--reveal-delay, 0ms), transform 600ms var(--ease) var(--reveal-delay, 0ms), translate var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .values li::before { content: ''; position: absolute; inset: 0 1.5rem auto; height: 3px; border-radius: 0 0 3px 3px; background: linear-gradient(90deg, var(--c-secondary), var(--c-primary)); }
+  /* Decorative step number, drawn by CSS so it is not read out or contrast-checked as text. */
+  .values li::after { content: counter(value, decimal-leading-zero); position: absolute; top: 1.25rem; right: 1.5rem; font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1; color: var(--c-primary-tint); }
+  .values__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: linear-gradient(140deg, var(--c-secondary-soft), var(--c-primary-soft)); color: var(--c-secondary); }
+  .values p { color: var(--c-muted); }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) { .values li:hover { translate: 0 -4px; box-shadow: var(--shadow-lg); } }
+  @media (min-width: 760px) { .values { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
 </style>

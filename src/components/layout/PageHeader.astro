@@ -1,35 +1,35 @@
 ---
-/** Title band for inner pages, with breadcrumbs. */
+/** Title band for inner pages, with breadcrumbs. Content in the optional `aside` slot sits beside the title on wide screens. */
 interface Crumb { label: string; href?: string }
 interface Props { title: string; eyebrow?: string; intro?: string; crumbs?: Crumb[] }
 const { title, eyebrow, intro, crumbs = [] } = Astro.props;
+const hasAside = Astro.slots.has('aside');
 ---
-<section class="page-header">
+<section class:list={['page-header', hasAside && 'page-header--split']}>
   <div class="container">
-    {crumbs.length > 0 && (
-      <nav aria-label="Breadcrumb" class="crumbs">
-        <ol>
-          <li><a href="/">Home</a></li>
-          {crumbs.map((c, i) => (
-            <li>{c.href && i < crumbs.length - 1 ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}</li>
-          ))}
-        </ol>
-      </nav>
-    )}
-    {eyebrow && <p class="eyebrow">{eyebrow}</p>}
-    <h1>{title}</h1>
-    {intro && <p class="lead">{intro}</p>}
-    <slot />
+    <div class="page-header__main">
+      {crumbs.length > 0 && (
+        <nav aria-label="Breadcrumb" class="crumbs">
+          <ol>
+            <li><a href="/">Home</a></li>
+            {crumbs.map((c, i) => (
+              <li>{c.href && i < crumbs.length - 1 ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}</li>
+            ))}
+          </ol>
+        </nav>
+      )}
+      {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+      <h1>{title}</h1>
+      {intro && <p class="lead">{intro}</p>}
+      <slot />
+    </div>
+    {hasAside && <div class="page-header__aside"><slot name="aside" /></div>}
   </div>
 </section>
 
 <style>
   .page-header { padding-block: clamp(2.5rem, 2rem + 3vw, 4.5rem); background: radial-gradient(60rem 20rem at 85% -20%, var(--c-primary-tint), transparent 70%), linear-gradient(180deg, var(--c-primary-soft), #fff); border-bottom: 1px solid var(--c-line); }
-  .page-header .container { display: grid; gap: 1rem; max-width: calc(var(--container) + 2 * var(--gutter)); }
+  .page-header .container { display: grid; gap: 2.5rem; max-width: calc(var(--container) + 2 * var(--gutter)); }
+  .page-header__main { display: grid; gap: 1rem; }
   .page-header .lead, .page-header h1 { max-width: 46rem; }
-  .crumbs ol { display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; list-style: none; margin: 0; padding: 0; font-size: var(--fs-300); color: var(--c-muted); }
-  .crumbs li + li::before { content: '/'; margin-right: 0.5rem; color: #9db0c0; }
-  .crumbs a { color: var(--c-muted); }
-  .crumbs a:hover { color: var(--c-primary); }
-  .crumbs [aria-current] { color: var(--c-ink); font-weight: 600; }
-</style>
+  @media (min-width: 960px) { .page-header--split .container { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: center; gap: 4rem; } }</style>

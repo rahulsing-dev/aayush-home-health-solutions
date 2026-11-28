@@ -1,0 +1,39 @@
+---
+/** Home page "Why Aayush": a short pitch, the 24/7 promise and the featured reasons, linking to /why-aayush. */
+import Icon from '../ui/Icon.astro';
+import WhyGrid from './WhyGrid.astro';
+import { whyAayush } from '../../content/pages';
+import { contact, telHref } from '../../config/site';
+
+const phone = contact.phones[0];
+---
+<section class="section why-home" aria-labelledby="why-h">
+  <div class="container why-home__grid">
+    <div class="why-home__intro reveal">
+      <p class="eyebrow">Why Aayush</p>
+      <h2 id="why-h">What families can count on</h2>
+      <p class="lead">{whyAayush.homeIntro}</p>
+      <div class="why-home__promise">
+        <span class="why-home__promise-icon"><Icon name="clock" size={22} /></span>
+        <p><strong><span class="live-dot" aria-hidden="true"></span> {contact.availability}</strong><span>Call, WhatsApp or email at any hour</span></p>
+      </div>
+      <div class="btn-row">
+        <a class="btn btn--primary" href="/why-aayush">Why choose Aayush? <Icon name="arrow-right" size={18} /></a>
+        <a class="btn btn--outline" href={telHref(phone.tel)}><Icon name="phone" size={18} /> <span class="sr-only">Call </span>{phone.display}</a>
+      </div>
+    </div>
+    <WhyGrid compact />
+  </div>
+</section>
+
+<style>
+  .why-home { position: relative; overflow: hidden; background: radial-gradient(40rem 26rem at 0% 0%, var(--c-primary-soft), transparent 70%), radial-gradient(36rem 26rem at 100% 100%, var(--c-secondary-soft), transparent 70%), var(--c-bg-soft); }
+  .why-home__grid { display: grid; gap: clamp(2.25rem, 1.5rem + 3vw, 3.5rem); align-items: center; }
+  .why-home__intro { display: grid; gap: 1.1rem; justify-items: start; max-width: 36rem; }
+  .why-home__promise { display: flex; align-items: center; gap: 0.9rem; padding: 0.85rem 1.25rem 0.85rem 0.85rem; border-radius: var(--radius-md); background: #fff; border: 1px solid var(--c-line); box-shadow: var(--shadow-md); }
+  .why-home__promise-icon { flex: none; display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--c-success-soft); color: var(--c-success); }
+  .why-home__promise p { display: grid; gap: 0.1rem; line-height: 1.35; color: var(--c-muted); font-size: var(--fs-300); }
+  .why-home__promise strong { display: inline-flex; align-items: center; gap: 0.55rem; color: var(--c-ink); font-size: var(--fs-400); }
+  .why-home__intro .btn-row { margin-top: 0.4rem; }
+  @media (min-width: 1000px) { .why-home__grid { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 3.5rem; } }
+</style>

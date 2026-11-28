@@ -1,7 +1,7 @@
 import json
 from playwright.sync_api import sync_playwright
 axe=open('node_modules/axe-core/axe.min.js').read()
-pages=["/","/services","/services/home-nursing","/about","/why-aayush","/testimonials","/career","/blog","/blog/a-home-away-from-home","/blog/in-home-care-the-best-choice-for-your-beloved","/faqs","/contact","/privacy-policy","/site-map","/nope"]
+pages=["/","/services","/services/home-nursing","/about","/why-aayush","/testimonials","/career","/blog","/blog/a-home-away-from-home","/blog/in-home-care-the-best-choice-for-your-beloved","/blog/bringing-a-parent-home-after-a-hospital-stay","/blog/caring-for-a-parent-with-dementia-at-home","/faqs","/contact","/privacy-policy","/site-map","/nope"]
 tot=0
 with sync_playwright() as p:
     b=p.chromium.launch()

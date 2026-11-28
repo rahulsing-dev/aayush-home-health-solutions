@@ -2,8 +2,138 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/layout/PageHeader.astro';
 import BlogCards from '../../components/sections/BlogCards.astro';
+import CtaBand from '../../components/sections/CtaBand.astro';
+import Icon from '../../components/ui/Icon.astro';
+import { getPublishedPosts } from '../../content/blog';
+import { blogCategories } from '../../content/blog-categories';
+
+const posts = await getPublishedPosts();
+const topics = blogCategories
+  .map((c) => ({ ...c, count: posts.filter((p) => p.data.category === c.id).length }))
+  .filter((c) => c.count > 0);
+// Filtering only helps once there is something to narrow down.
+const showFilter = topics.length > 1 && posts.length > 3;
+const articles = (n: number) => `${n} ${n === 1 ? 'article' : 'articles'}`;
 ---
-<BaseLayout title="Blog" description="Articles on home nursing, elder care and in-home health care from Aayush Home Health Solutions.">
-  <PageHeader title="Blog" eyebrow="Insights" intro="Thoughts on caring for ageing parents and loved ones at home." crumbs={[{ label: 'Blog' }]} />
-  <section class="section"><div class="container"><h2 class="sr-only">All posts</h2><BlogCards /></div></section>
+<BaseLayout
+  title="Blog: Home Care Guides for Families"
+  description="Practical guides on home nursing, elder care, recovery after a hospital stay, dementia care and support for family caregivers, from Aayush Home Health Solutions in Bangalore."
+>
+  <PageHeader
+    title="Guides for caring at home"
+    eyebrow="Aayush blog"
+    intro="Practical, plain-language advice on home nursing, elder care and recovery after a hospital stay, for families looking after someone they love."
+    crumbs={[{ label: 'Blog' }]}
+  >
+    {showFilter && (
+      <div class="topics" data-topics hidden>
+        <p class="topics__label" id="topics-label">Browse by topic</p>
+        <div class="topics__list" role="group" aria-labelledby="topics-label">
+          <button type="button" class="topic" aria-pressed="true" data-topic="all" data-label="all topics">
+            All articles <span class="topic__count">{posts.length}</span>
+          </button>
+          {topics.map((t) => (
+            <button type="button" class:list={['topic', `tone-${t.tone}`]} aria-pressed="false" data-topic={t.id} data-label={t.label}>
+              <Icon name={t.icon} size={16} /> {t.label} <span class="topic__count">{t.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+  </PageHeader>
+
+  <section class="section listing" aria-labelledby="posts-h">
+    <div class="container">
+      <div class="listing__head">
+        <h2 id="posts-h">Latest articles</h2>
+        <p class="listing__status" role="status" data-status>{articles(posts.length)}</p>
+      </div>
+      <BlogCards posts={posts} lead />
+
+      <div class="faq-strip reveal">
+        <span class="faq-strip__icon"><Icon name="info" size={26} /></span>
+        <div class="faq-strip__copy">
+          <h2>Looking for a quick answer?</h2>
+          <p>Our FAQs cover booking, charges, our staff and what to expect when care begins.</p>
+        </div>
+        <a class="btn btn--outline" href="/faqs">Browse the FAQs <Icon name="arrow-right" size={18} /></a>
+      </div>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Need advice about care at home?"
+    text="Every family’s situation is different. Tell us about yours, and we will help you plan the right support. We are reachable 24/7."
+    whatsapp={{ label: 'WhatsApp', message: 'Hello Aayush Home Health, I read your blog and would like some advice about care at home.' }}
+  />
 </BaseLayout>
+
+<script>
+  // Topic filter (progressive enhancement: without JS every article is listed and the buttons stay hidden).
+  const root = document.querySelector<HTMLElement>('[data-topics]');
+  const list = document.querySelector<HTMLElement>('[data-posts]');
+  const status = document.querySelector<HTMLElement>('[data-status]');
+  if (root && list && status) {
+    root.hidden = false;
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('button[data-topic]')];
+    const items = [...list.querySelectorAll<HTMLElement>('li[data-topic]')];
+    // The large lead card only makes sense in the full list.
+    const lead = list.querySelector<HTMLElement>('.post--lead');
+
+    const apply = (wanted: string, updateUrl: boolean) => {
+      const topic = buttons.some((b) => b.dataset.topic === wanted) ? wanted : 'all';
+      let shown = 0;
+      for (const li of items) {
+        const show = topic === 'all' || li.dataset.topic === topic;
+        li.hidden = !show;
+        if (show) { shown++; li.classList.add('is-visible'); }
+      }
+      lead?.classList.toggle('post--lead', topic === 'all');
+      for (const b of buttons) b.setAttribute('aria-pressed', String(b.dataset.topic === topic));
+      const n = `${shown} ${shown === 1 ? 'article' : 'articles'}`;
+      const label = buttons.find((b) => b.dataset.topic === topic)?.dataset.label ?? '';
+      status.textContent = topic === 'all' ? n : `${n} in ${label}`;
+      if (updateUrl) {
+        const url = new URL(location.href);
+        if (topic === 'all') url.searchParams.delete('topic'); else url.searchParams.set('topic', topic);
+        history.replaceState(null, '', url);
+      }
+    };
+
+    for (const b of buttons) b.addEventListener('click', () => apply(b.dataset.topic ?? 'all', true));
+    const initial = new URLSearchParams(location.search).get('topic');
+    if (initial) apply(initial, false);
+  }
+</script>
+
+<style>
+  /* Topic filter in the page header. */
+  .topics { display: grid; gap: 0.7rem; margin-top: 0.75rem; }
+  .topics__label { font-size: var(--fs-300); font-weight: 650; color: var(--c-muted); }
+  .topics__list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .topic { --tone: var(--c-primary); --tone-soft: var(--c-primary-soft); display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.75rem; padding: 0.45rem 0.6rem 0.45rem 1rem; border: 1.5px solid var(--c-line); border-radius: 999px; background: #fff; color: var(--c-ink); font-weight: 600; font-size: 0.9375rem; line-height: 1.2; cursor: pointer; transition: background-color var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .topic :global(svg) { color: var(--tone); transition: color var(--dur) var(--ease); }
+  .topic:hover { border-color: var(--tone); box-shadow: var(--shadow-sm); }
+  .topic__count { display: inline-grid; place-items: center; min-width: 1.75rem; height: 1.75rem; padding-inline: 0.4rem; border-radius: 999px; background: var(--c-bg-soft); color: var(--c-muted); font-size: 0.8125rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .topic[aria-pressed='true'] { background: var(--c-navy); border-color: var(--c-navy); color: #fff; box-shadow: var(--shadow-md); }
+  .topic[aria-pressed='true'] :global(svg) { color: #fff; }
+  .topic[aria-pressed='true'] .topic__count { background: rgb(255 255 255 / 0.18); color: #fff; }
+  /* Phones: one swipeable row instead of several rows of chips. `contain` keeps the row from widening the page. */
+  @media (max-width: 639px) {
+    .topics__list { contain: inline-size; flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--gutter)); padding: 0.5rem var(--gutter); scroll-snap-type: x proximity; scroll-padding-inline: var(--gutter); scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
+    .topics__list::-webkit-scrollbar { display: none; }
+    .topic { flex: none; scroll-snap-align: start; }
+  }
+
+  .listing { padding-top: clamp(2.5rem, 2rem + 2.5vw, 4rem); }
+  .listing__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 1rem; margin-bottom: 1.5rem; }
+  .listing__head h2 { font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem); }
+  .listing__status { color: var(--c-muted); font-weight: 600; font-size: var(--fs-300); }
+
+  .faq-strip { display: grid; gap: 1.25rem; align-items: center; justify-items: start; margin-top: clamp(2.5rem, 2rem + 2vw, 4rem); padding: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem); border-radius: var(--radius-lg); background: linear-gradient(120deg, var(--c-secondary-soft), var(--c-primary-soft)); border: 1px solid var(--c-line); }
+  .faq-strip__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: #fff; color: var(--c-secondary); box-shadow: var(--shadow-sm); }
+  .faq-strip__copy { display: grid; gap: 0.35rem; }
+  .faq-strip h2 { font-size: clamp(1.3rem, 1.15rem + 0.6vw, 1.6rem); }
+  .faq-strip p { color: var(--c-text); }
+  @media (min-width: 860px) { .faq-strip { grid-template-columns: auto 1fr auto; gap: 1.5rem; } }
+</style>

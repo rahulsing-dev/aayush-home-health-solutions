@@ -1,0 +1,48 @@
+---
+/**
+ * A correctly attributed quotation (figure > blockquote + figcaption).
+ * `tile` sits inside a card or gallery cell; `band` is the large centred version for a full-width band;
+ * `pull` is a founder-style pull quote with an accent rule.
+ */
+import Icon from './Icon.astro';
+import type { Quote } from '../../lib/types';
+
+interface Props {
+  quote: Quote;
+  variant?: 'tile' | 'band' | 'pull';
+  /** false = the attribution is read by screen readers only (when the author is already named nearby). */
+  showAuthor?: boolean;
+  class?: string;
+}
+const { quote, variant = 'tile', showAuthor = true, class: className } = Astro.props;
+---
+<figure class:list={['quote', `quote--${variant}`, className]}>
+  <Icon name="quote" size={variant === 'band' ? 40 : 28} class="quote__mark" />
+  <blockquote lang={quote.lang}><p>{quote.text}</p></blockquote>
+  {quote.translation && <p class="quote__translation">{quote.translation}</p>}
+  <figcaption class:list={[!showAuthor && 'sr-only']}>
+    <span class="quote__author">{quote.author}</span>{quote.source && <>, <cite>{quote.source}</cite></>}
+  </figcaption>
+</figure>
+
+<style>
+  .quote { display: grid; gap: 0.85rem; align-content: center; margin: 0; }
+  .quote :global(.quote__mark) { color: var(--c-accent); opacity: 0.85; }
+  .quote blockquote { margin: 0; }
+  .quote blockquote p { font-family: var(--font-display); font-weight: 500; font-style: italic; color: var(--c-ink); line-height: 1.4; text-wrap: balance; }
+  .quote figcaption { font-size: var(--fs-400); color: var(--c-muted); }
+  .quote__author { font-weight: 650; color: var(--c-text); }
+  .quote cite { font-style: italic; }
+
+  .quote--tile blockquote p { font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem); }
+
+  .quote--band { justify-items: center; text-align: center; max-width: 48rem; margin-inline: auto; gap: 1rem; }
+  .quote--band blockquote p { font-size: clamp(1.75rem, 1.2rem + 2.4vw, 3rem); font-weight: 550; line-height: 1.2; }
+  .quote__translation { font-size: var(--fs-600); color: var(--c-text); max-width: 34rem; text-wrap: balance; }
+  .quote--band figcaption { display: inline-flex; align-items: center; gap: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; font-size: var(--fs-300); font-weight: 650; }
+  .quote--band figcaption::before, .quote--band figcaption::after { content: ''; width: 2rem; height: 1px; background: currentColor; opacity: 0.5; }
+
+  .quote--pull { padding-left: 1.25rem; border-left: 3px solid var(--c-accent); gap: 0.6rem; }
+  .quote--pull :global(.quote__mark) { display: none; }
+  .quote--pull blockquote p { font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.6rem); }
+</style>

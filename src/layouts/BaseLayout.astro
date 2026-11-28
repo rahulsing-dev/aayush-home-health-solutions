@@ -9,6 +9,7 @@ import '../styles/global.css';
 import Seo from '../components/ui/Seo.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import ContactDock from '../components/layout/ContactDock.astro';
 
 interface Props {
   title: string;
@@ -26,7 +27,8 @@ const props = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0b5fa5" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="generator" content={Astro.generator} />
     <Seo {...props} withBusinessSchema={props.isHome} />
     <script is:inline>document.documentElement.classList.add('js');</script>
@@ -38,6 +40,7 @@ const props = Astro.props;
       <slot />
     </main>
     <Footer />
+    <ContactDock />
 
     <script>
       // Scroll-reveal: add `.reveal` to any element. Content stays visible without JS.

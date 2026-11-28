@@ -1,0 +1,83 @@
+---
+/**
+ * Home page "Our services": the first featured service as a large photo card, up to six more
+ * featured services as compact cards, and a link to the full list. With a single service it
+ * collapses to the large card alone (no grid, no "Explore all").
+ */
+import Media from '../ui/Media.astro';
+import Icon from '../ui/Icon.astro';
+import ServiceTile from '../ui/ServiceTile.astro';
+import { enquireHref, featuredServices, getCategory, services } from '../../content/services';
+
+const [lead, ...rest] = featuredServices.length ? featuredServices : services;
+const tiles = rest.slice(0, 6);
+const remaining = services.length - 1 - tiles.length;
+const category = getCategory(lead.category);
+---
+<div class:list={['hl', tiles.length === 0 && 'hl--solo']}>
+  <article class:list={['lead', `tone-${category?.tone ?? 'blue'}`, 'reveal']}>
+    <Media image={lead.image} sizes="(min-width: 1000px) 460px, (min-width: 700px) 45vw, 100vw" />
+    <div class="lead__body">
+      {category && <p class="lead__tag"><Icon name={lead.icon} size={18} /> {category.title}</p>}
+      <h3><a href={`/services/${lead.slug}`}>{lead.title}</a></h3>
+      <p class="lead__text">{lead.summary}</p>
+      <ul role="list" class="lead__points">
+        {lead.highlights.slice(0, 3).map((h) => <li><span class="lead__tick"><Icon name="check" size={14} /></span><span>{h}</span></li>)}
+      </ul>
+      <div class="btn-row">
+        <a class="btn btn--primary" href={`/services/${lead.slug}`}>Learn more<span class="sr-only"> about {lead.title}</span> <Icon name="arrow-right" size={18} /></a>
+        <a class="btn btn--outline" href={enquireHref(lead.slug)}>Enquire<span class="sr-only"> about {lead.title}</span></a>
+      </div>
+    </div>
+  </article>
+
+  {tiles.length > 0 && (
+    <ul role="list" class="hl__grid">
+      {tiles.map((s, i) => <li class="reveal" style={`--reveal-delay:${(i + 1) * 70}ms`}><ServiceTile service={s} compact /></li>)}
+    </ul>
+  )}
+</div>
+
+{services.length > 1 && (
+  <div class="hl__foot reveal">
+    <a class="btn btn--primary" href="/services">Explore all {services.length} services <Icon name="arrow-right" size={18} /></a>
+    <p>{remaining > 0 && <>Including {services.filter((s) => s !== lead && !tiles.includes(s)).slice(0, 3).map((s) => s.title).join(', ')} and more. </>}Not sure what you need? <a href="/contact">Talk to us</a>.</p>
+  </div>
+)}
+
+<style>
+  .hl { display: grid; gap: 1.25rem; }
+  .lead { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); }
+  .lead :global(.media) { border-radius: 0; }
+  .lead__body { display: grid; gap: 0.85rem; justify-items: start; padding: 1.5rem 1.5rem 1.75rem; }
+  .lead__tag { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.8rem 0.3rem 0.6rem; border-radius: 999px; background: var(--tone-soft); color: var(--tone-ink); font-size: var(--fs-300); font-weight: 700; letter-spacing: 0.02em; }
+  .lead h3 { font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem); }
+  .lead h3 a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--c-ink); text-decoration: none; }
+  .lead h3 a:hover { color: var(--c-primary); }
+  .lead__text { color: var(--c-muted); }
+  .lead__points { display: grid; gap: 0.55rem; }
+  .lead__points li { display: flex; gap: 0.6rem; align-items: flex-start; }
+  .lead__tick { flex: none; display: grid; place-items: center; width: 1.35rem; height: 1.35rem; margin-top: 0.15rem; border-radius: 50%; background: var(--c-secondary); color: #fff; }
+  .lead .btn-row { margin-top: 0.35rem; }
+
+  .hl__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+  .hl__grid > li { min-width: 0; }
+
+  .hl__foot { display: grid; justify-items: center; gap: 0.85rem; margin-top: clamp(2rem, 1.5rem + 1.5vw, 3rem); text-align: center; }
+  .hl__foot p { color: var(--c-muted); max-width: 40rem; }
+
+  @media (min-width: 560px) { .hl__grid { gap: 1rem; } }
+  @media (min-width: 700px) {
+    .lead { flex-direction: row; }
+    .lead :global(.media) { flex: 0 0 45%; aspect-ratio: auto !important; min-height: 100%; }
+    .lead__body { align-content: center; padding: 2rem; }
+    .hl__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1000px) {
+    .hl:not(.hl--solo) { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr); gap: 1.25rem; }
+    .hl:not(.hl--solo) .lead { flex-direction: column; }
+    .hl:not(.hl--solo) .lead :global(.media) { flex: none; aspect-ratio: 16 / 10 !important; min-height: 0; }
+    .hl:not(.hl--solo) .lead__body { padding: 1.75rem; }
+    .hl__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 1.25rem; }
+  }
+</style>

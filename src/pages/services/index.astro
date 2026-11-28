@@ -1,13 +1,117 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHeader from '../../components/layout/PageHeader.astro';
-import ServiceCards from '../../components/sections/ServiceCards.astro';
-import FeatureBand from '../../components/sections/FeatureBand.astro';
+import Media from '../../components/ui/Media.astro';
+import Icon from '../../components/ui/Icon.astro';
+import ServiceCatalogue from '../../components/sections/ServiceCatalogue.astro';
+import CareFinder from '../../components/sections/CareFinder.astro';
+import ServicePromise from '../../components/sections/ServicePromise.astro';
+import Process from '../../components/sections/Process.astro';
 import CtaBand from '../../components/sections/CtaBand.astro';
+import { serviceCategories, services, servicesIn } from '../../content/services';
+import { contact, whatsappHref } from '../../config/site';
+
+const groups = serviceCategories.map((c) => ({ ...c, count: servicesIn(c.id).length })).filter((g) => g.count > 0);
+const count = services.length;
+const heroServices = services.slice(0, 4);
+const heroImage = services[0].image.src
+  ? { ...services[0].image, ratio: '5 / 4' }
+  : { alt: 'A caregiver with an elderly person at home', ratio: '5 / 4', width: 1250, height: 1000 };
 ---
-<BaseLayout title="Home Nursing Services" description="Home nursing services from Aayush Home Health Solutions, Bangalore: trained, trustworthy nursing staff caring for elderly persons and patients at home.">
-  <PageHeader title="Home Nursing Services" eyebrow="What we do" intro="Skilled and trustworthy staff, compassionate caring, and one point solution for those in need." crumbs={[{ label: 'Services' }]} />
-  <section class="section"><div class="container"><h2 class="sr-only">Our home nursing service</h2><ServiceCards /></div></section>
-  <FeatureBand />
-  <CtaBand title="Not sure what care is needed?" text="Talk to us. We can help you understand the options." />
+<BaseLayout
+  title="Home Health Services in Bangalore"
+  description="Home nursing, trained attendants, elder care, palliative, dementia and Alzheimer's care, physiotherapy and more, at home in Bangalore from Aayush Home Health Solutions."
+>
+  <PageHeader
+    title="Care at home, for every stage of life"
+    eyebrow="Our services"
+    intro={`From trained attendants and elder care to nursing, physiotherapy and memory care: ${count} home health services in Bangalore, with one point of contact for your family.`}
+    crumbs={[{ label: 'Services' }]}
+  >
+    <div class="btn-row hero-actions">
+      <a class="btn btn--primary" href="/contact">Make an Enquiry <Icon name="arrow-right" size={18} /></a>
+      <a class="btn btn--whatsapp" href={whatsappHref('Hello Aayush Home Health, I would like to know more about your home health services.')} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Chat on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+    </div>
+    <p class="hero-note"><Icon name="clock" size={18} /> {contact.availability}</p>
+
+    <div slot="aside" class="hero-visual">
+      <Media image={heroImage} eager sizes="(min-width: 960px) 500px, 100vw" />
+      <div class="hero-card" aria-hidden="true">
+        <span class="hero-card__icons">
+          {heroServices.map((s) => <span class="hero-card__icon"><Icon name={s.icon} size={16} /></span>)}
+        </span>
+        <span><strong>{count} services</strong> One point solution</span>
+      </div>
+    </div>
+  </PageHeader>
+
+  {groups.length > 1 && (
+    <nav class="catnav" aria-label="Service groups">
+      <div class="container">
+        <ul role="list" class="catnav__list">
+          {groups.map((g) => (
+            <li>
+              <a href={`#${g.id}`} class:list={['catnav__link', `tone-${g.tone}`]}>
+                <span class="catnav__icon"><Icon name={g.icon} size={22} /></span>
+                <span class="catnav__text"><strong>{g.title}</strong><span>{g.count} {g.count === 1 ? 'service' : 'services'}</span></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </nav>
+  )}
+
+  <div class="section catalogue"><div class="container"><ServiceCatalogue /></div></div>
+
+  <section class="section section--soft" aria-labelledby="finder-h"><div class="container"><CareFinder /></div></section>
+
+  <section class="section section--warm" aria-labelledby="promise-h"><div class="container"><ServicePromise /></div></section>
+
+  <Process />
+
+  <CtaBand
+    title="Not sure which service is right?"
+    text="Talk to us. We will help you understand the options and plan care that fits."
+    whatsapp={{ label: 'WhatsApp', message: 'Hello Aayush Home Health, I need help choosing the right care for my family.' }}
+  />
 </BaseLayout>
+
+<style>
+  .hero-actions { margin-top: 0.5rem; }
+  .hero-note { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--c-muted); font-weight: 600; font-size: 0.9375rem; }
+  .hero-note :global(svg) { color: var(--c-success); }
+
+  .hero-visual { position: relative; max-width: 32rem; }
+  @media (min-width: 960px) { .hero-visual { max-width: none; } }
+  .hero-visual :global(.media) { box-shadow: var(--shadow-lg); }
+  .hero-card { position: absolute; left: 0.85rem; bottom: 0.85rem; display: flex; align-items: center; gap: 0.75rem; max-width: calc(100% - 1.7rem); padding: 0.7rem 1rem 0.7rem 0.75rem; background: rgb(255 255 255 / 0.95); border-radius: var(--radius-md); box-shadow: var(--shadow-md); color: var(--c-muted); font-size: 0.9375rem; line-height: 1.3; }
+  .hero-card strong { display: block; color: var(--c-ink); font-size: 1.0625rem; }
+  .hero-card__icons { display: flex; flex: none; }
+  .hero-card__icon { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: var(--c-primary); color: #fff; border: 2px solid #fff; }
+  .hero-card__icon + .hero-card__icon { margin-left: -0.55rem; }
+  .hero-card__icon:nth-child(2) { background: var(--c-secondary); }
+  .hero-card__icon:nth-child(3) { background: var(--c-plum); }
+  .hero-card__icon:nth-child(4) { background: var(--c-sun); }
+  @media (max-width: 379px) { .hero-card__icon:nth-child(n + 3) { display: none; } }
+
+  /* Group shortcuts, lifted over the bottom edge of the page header. */
+  .catnav { position: relative; z-index: 2; margin-top: -1.75rem; }
+  .catnav__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .catnav__link { display: flex; align-items: center; gap: 0.75rem; height: 100%; min-height: 3.5rem; padding: 0.8rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-md); box-shadow: var(--shadow-md); text-decoration: none; color: var(--c-ink); transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .catnav__link:hover { border-color: var(--tone); transform: translateY(-2px); box-shadow: var(--shadow-lg); color: var(--c-ink); }
+  .catnav__icon { flex: none; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 0.8rem; background: var(--tone-soft); color: var(--tone); }
+  .catnav__text { display: grid; min-width: 0; line-height: 1.3; }
+  .catnav__text strong { font-size: 0.9375rem; overflow-wrap: anywhere; }
+  .catnav__text span { color: var(--c-muted); font-size: 0.8125rem; }
+  .catalogue { padding-top: clamp(2.5rem, 2rem + 3vw, 4.5rem); }
+  @media (max-width: 479px) {
+    .catnav__link { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  }
+  @media (min-width: 900px) {
+    .catnav__list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+    .catnav__link { padding: 1rem; }
+    .catnav__text strong { font-size: 1rem; }
+    .catnav__text span { font-size: 0.875rem; }
+  }
+</style>

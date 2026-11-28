@@ -2,12 +2,12 @@
 import Media from '../ui/Media.astro';
 import { homeAwayFromHome as f } from '../../content/pages';
 ---
-<section class="section section--warm">
+<section class="section section--warm" aria-labelledby="home-away-h">
   <div class="container band">
-    <div class="band__media reveal"><Media image={f.image} /></div>
+    <div class="band__media reveal"><Media image={f.image} sizes="(min-width: 900px) 560px, 100vw" /></div>
     <div class="band__copy reveal" style="--reveal-delay:100ms">
       <p class="eyebrow">Care that feels like home</p>
-      <h2>{f.title}</h2>
+      <h2 id="home-away-h">{f.title}</h2>
       <p class="lead">{f.body}</p>
       <a class="btn btn--primary" href="/services/home-nursing">Explore Home Nursing</a>
     </div>

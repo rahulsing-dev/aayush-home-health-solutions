@@ -1,44 +1,33 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHeader from '../components/layout/PageHeader.astro';
-import DraftBadge from '../components/ui/DraftBadge.astro';
-import { contact, site } from '../config/site';
+import { addressOneLine, contact, offices, site } from '../config/site';
 ---
 <BaseLayout title="Privacy Policy" description={`How ${site.name} handles personal information shared through this website.`}>
-  <PageHeader title="Privacy Policy" eyebrow="Legal" crumbs={[{ label: 'Privacy Policy' }]}>
-    <p class="draft"><DraftBadge label="Draft template — legal review required" /> This text is a starting template written for the rebuild. It has not been reviewed by a lawyer and should be checked against the business's actual data practices and applicable Indian law (including the Digital Personal Data Protection Act, 2023) before publication.</p>
-  </PageHeader>
+  <PageHeader title="Privacy Policy" eyebrow="Legal" crumbs={[{ label: 'Privacy Policy' }]} />
   <section class="section">
     <div class="container container--narrow">
       <div class="prose">
         <p>This policy explains how {site.name} (“we”, “us”) handles personal information that you share with us through this website.</p>
 
         <h2>Information we collect</h2>
-        <p>When you use the enquiry or booking forms, we ask for your name, email address, phone number, city, the service you are interested in, an optional preferred date and an optional message. If you contact us by phone or email, we receive the details you choose to share.</p>
+        <p>When you use the enquiry or booking form, we ask for your name, phone number, where care is needed (area or city) and the service you are interested in. A preferred start date is required for a booking and optional for an enquiry; an email address and a message are optional. If you contact us by phone, WhatsApp or email, we receive the details you choose to share.</p>
         <p>Please do not include detailed medical records or other sensitive health information in the website forms. We will discuss those details with you directly.</p>
 
         <h2>How we use it</h2>
-        <p>We use this information to respond to your enquiry, discuss and arrange the service you ask about, and to keep reasonable records of our communication with you. [Placeholder: add any other purposes, such as service follow-ups.]</p>
-
-        <h2>Sharing</h2>
-        <p>[Placeholder: describe who may receive this information, for example form-delivery or email providers, and whether it is ever shared with care staff or partner facilities.]</p>
-
-        <h2>Retention</h2>
-        <p>[Placeholder: state how long enquiry details are kept.]</p>
+        <p>We use this information to respond to your enquiry, discuss and arrange the service you ask about, and to keep reasonable records of our communication with you.</p>
+        <p>Form submissions are delivered to our email inbox by Web3Forms, a form delivery service.</p>
 
         <h2>Cookies and analytics</h2>
-        <p>This website does not set tracking cookies or load third-party analytics scripts in its current configuration. If that changes, this policy must be updated.</p>
+        <p>This website does not set tracking cookies or load third-party analytics scripts. If that changes, we will update this policy first.</p>
 
         <h2>Your choices</h2>
         <p>You can ask us to access, correct or delete the personal information you have shared with us by writing to <a href={`mailto:${contact.email}`}>{contact.email}</a>.</p>
 
         <h2>Contact</h2>
-        <p>{site.name}, {`#4, Sai Enclave, 1st Cross, KSR Main Road, Banjara Layout, Kanakagiri, Horamavu Post, Bangalore – 560043`}.<br />Email: <a href={`mailto:${contact.email}`}>{contact.email}</a></p>
+        <p>{site.name}, {addressOneLine(offices[0])}.<br />Email: <a href={`mailto:${contact.email}`}>{contact.email}</a></p>
       </div>
     </div>
   </section>
 </BaseLayout>
 
-<style>
-  .draft { max-width: 46rem; padding: 0.9rem 1.1rem; background: var(--c-draft-soft); border: 1px solid #f0d58a; border-radius: var(--radius-sm); color: #5c3d00; font-size: 0.9375rem; }
-</style>

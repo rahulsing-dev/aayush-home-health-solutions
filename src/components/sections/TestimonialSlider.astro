@@ -1,0 +1,275 @@
+---
+/**
+ * Home page testimonial slider: manual, free-scrolling (no snapping) and endless in both directions.
+ * - Swipe, trackpad and keyboard use native scrolling; mouse users can also click and drag.
+ * - The real card list is rendered once; a script adds hidden, inert copies on both sides and
+ *   quietly re-centres the scroll position, so the row never reaches an end. When all the cards
+ *   fit in the row (e.g. only two reviews on a wide screen) it stays a plain row with no copies.
+ * - No automatic movement. Without JavaScript it is a normal horizontally scrollable row.
+ */
+import Icon from '../ui/Icon.astro';
+import TestimonialPhoto from '../ui/TestimonialPhoto.astro';
+import { visibleTestimonials as items } from '../../content/testimonials';
+---
+{items.length > 0 && (
+  <section class="section tsl-section" aria-labelledby="tst-h">
+    <div class="container">
+      <div class="tsl reveal">
+        <span class="tsl__bg" aria-hidden="true"></span>
+        <span class="tsl__medallion" aria-hidden="true"><Icon name="quote" size={34} /></span>
+
+        <div class="tsl__intro">
+          <p class="eyebrow tsl__eyebrow">Testimonials</p>
+          <h2 id="tst-h">Words from the families we support</h2>
+          <p>Since 2020, families in Bangalore have trusted Aayush with the care of their parents and loved ones at home. Here is what some of them say.</p>
+          <a class="link-arrow tsl__all" href="/testimonials">Read all stories <Icon name="arrow-right" size={18} /></a>
+        </div>
+
+        <div class="tsl__slider">
+          <div class="tsl__row" data-tst-row role="region" aria-label="Testimonials from client families">
+            <div class="tsl__lane" data-lane>
+              <ul class="tsl__set" data-set role="list">
+                {items.map((t) => (
+                  <li class="tsl__item">
+                    <figure class="tcard">
+                      <div class="tcard__head">
+                        <TestimonialPhoto photo={t.photo} sizes="80px" class="tcard__photo" />
+                        <Icon name="quote" size={36} class="tcard__mark" />
+                      </div>
+                      <h3 class="tcard__title">{t.highlight}</h3>
+                      <blockquote class="tcard__quote"><p>{t.quote}</p></blockquote>
+                      <figcaption class="tcard__by">
+                        <span class="tcard__who">
+                          <strong>{t.author}</strong>
+                          <span>{t.relation}{t.context && ` · ${t.context}`}</span>
+                        </span>
+                        <a class="tcard__more" href={`/testimonials#review-${t.id}`}>Read full story<span class="sr-only"> from {t.author}</span></a>
+                      </figcaption>
+                    </figure>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+)}
+
+<script>
+  /** Minimum scroll distance kept on each side of the real cards, so a fast swipe never hits an end. */
+  const RUNWAY = 3000;
+
+  for (const row of document.querySelectorAll<HTMLElement>('[data-tst-row]')) {
+    const lane = row.querySelector<HTMLElement>('[data-lane]')!;
+    const set = row.querySelector<HTMLElement>('[data-set]')!;
+    let period = 0; // width of one copy of the list (its trailing padding equals the card gap)
+    let base = 0;   // scrollLeft at which the real list sits in its home position
+    let lastWidth = 0;
+    let touching = false;
+
+    const copy = () => {
+      const c = set.cloneNode(true) as HTMLElement;
+      c.removeAttribute('data-set');
+      c.setAttribute('data-clone', '');
+      c.setAttribute('aria-hidden', 'true');
+      c.inert = true; // decorative copies: not focusable, not read out
+      return c;
+    };
+
+    const build = () => {
+      const offset = period ? (row.scrollLeft - base) / period : 0;
+      lane.querySelectorAll('[data-clone]').forEach((c) => c.remove());
+      period = set.getBoundingClientRect().width;
+      if (!period) return;
+      // When every card already fits, a loop would only show the same reviews twice: keep a plain row.
+      const lead = parseFloat(getComputedStyle(lane).paddingLeft) || 0;
+      if (period + lead <= row.clientWidth + 1) {
+        period = 0;
+        row.classList.remove('is-looping');
+        row.scrollLeft = 0;
+        return;
+      }
+      const side = Math.max(2, Math.ceil(Math.max(RUNWAY, row.clientWidth * 2) / period));
+      for (let i = 0; i < side; i++) { lane.prepend(copy()); lane.append(copy()); }
+      base = side * period;
+      row.classList.add('is-looping');
+      row.scrollLeft = base + offset * period;
+    };
+
+    // Jump back by whole copies (invisible, since copies are identical) to stay near the middle.
+    const recentre = () => {
+      if (!period) return;
+      const k = Math.round((row.scrollLeft - base) / period);
+      if (k !== 0) row.scrollLeft -= k * period;
+    };
+    let idle: number | undefined;
+    row.addEventListener('scroll', () => {
+      // Safety net: re-centre at once if a long fling has used up half of the runway on either side.
+      if (Math.abs(row.scrollLeft - base) > Math.max(RUNWAY, period * 2) / 2) recentre();
+      // Otherwise re-centre once scrolling settles and no finger is on the screen.
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => { if (!touching) recentre(); }, 160);
+    }, { passive: true });
+    row.addEventListener('touchstart', () => { touching = true; }, { passive: true });
+    row.addEventListener('touchend', () => { touching = false; }, { passive: true });
+    row.addEventListener('touchcancel', () => { touching = false; }, { passive: true });
+
+    // Click-and-drag for mouse users, with a gentle glide on release.
+    let dragging = false;
+    let moved = 0;
+    let lastX = 0;
+    let lastT = 0;
+    let velocity = 0;
+    let glide = 0;
+    row.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      e.preventDefault(); // no text selection while dragging (links still respond to a plain click)
+      cancelAnimationFrame(glide);
+      dragging = true; moved = 0; velocity = 0;
+      lastX = e.clientX; lastT = e.timeStamp;
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dt = Math.max(1, e.timeStamp - lastT);
+      moved += Math.abs(dx);
+      if (moved > 4) row.classList.add('is-dragging');
+      row.scrollLeft -= dx;
+      velocity = 0.8 * (dx / dt) + 0.2 * velocity;
+      lastX = e.clientX; lastT = e.timeStamp;
+    });
+    window.addEventListener('pointerup', () => {
+      if (!dragging) return;
+      dragging = false;
+      row.classList.remove('is-dragging');
+      let v = velocity * 16; // px per frame
+      const step = () => {
+        if (Math.abs(v) < 0.3) return;
+        row.scrollLeft -= v;
+        v *= 0.94;
+        glide = requestAnimationFrame(step);
+      };
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) glide = requestAnimationFrame(step);
+    });
+    // A drag must not also follow the link under the pointer, or drag the image.
+    row.addEventListener('click', (e) => { if (moved > 6) { e.preventDefault(); e.stopPropagation(); } }, true);
+    row.addEventListener('dragstart', (e) => e.preventDefault());
+
+    new ResizeObserver(() => {
+      const w = Math.round(row.clientWidth);
+      if (w !== lastWidth) { lastWidth = w; build(); }
+    }).observe(row);
+    document.fonts?.ready.then(build);
+  }
+</script>
+
+<style>
+  .tsl-section { padding-top: calc(var(--section-y) + 2rem); }
+
+  /* ---------- Panel ---------- */
+  .tsl {
+    position: relative; isolation: isolate; display: grid; gap: 1.75rem;
+    padding: 3.5rem 1.25rem 1.25rem; border-radius: 1.75rem; color: #c9dcec;
+    box-shadow: var(--shadow-lg);
+  }
+  .tsl__bg {
+    position: absolute; inset: 0; z-index: -1; overflow: hidden; border-radius: inherit;
+    background:
+      radial-gradient(38rem 26rem at 100% 0%, rgb(20 120 192 / 0.5), transparent 65%),
+      linear-gradient(150deg, var(--c-navy) 0%, #0d3a66 55%, var(--c-primary-strong) 100%);
+  }
+  .tsl__bg::before, .tsl__bg::after { content: ''; position: absolute; border-radius: 50%; pointer-events: none; }
+  .tsl__bg::before { left: -6rem; bottom: -9rem; width: 20rem; height: 20rem; border: 2.75rem solid rgb(255 255 255 / 0.035); }
+  .tsl__bg::after { right: 12%; top: -3.5rem; width: 7rem; height: 7rem; background: rgb(255 255 255 / 0.04); }
+  .tsl__medallion {
+    position: absolute; top: 0; left: 1.25rem; transform: translateY(-50%);
+    display: grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%;
+    color: #fff; background: linear-gradient(145deg, #2a91dc, var(--c-primary));
+    border: 5px solid #fff; box-shadow: var(--shadow-md);
+  }
+  .tsl__medallion :global(svg) { width: 1.75rem; height: 1.75rem; }
+
+  /* ---------- Intro ---------- */
+  .tsl__intro { display: grid; gap: 0.9rem; justify-items: start; }
+  .tsl__eyebrow { color: #8fd3cf; }
+  .tsl__intro h2 { color: #fff; font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.4rem); }
+  .tsl__intro p:not(.eyebrow) { font-size: 1.0625rem; line-height: 1.7; max-width: 34rem; }
+  .tsl__all { margin-top: 0.25rem; color: #fff; min-height: 2.75rem; }
+  .tsl__all:hover { color: var(--c-primary-tint); }
+  .tsl :focus-visible { outline-color: #fff; }
+
+  /* ---------- Row ---------- */
+  .tsl__slider {
+    --gutter-x: 1.25rem; /* how far the row bleeds past the panel padding */
+    --gap: 1.25rem;      /* equal to the gutter on phones, so no sliver of the previous card shows */
+    --card-w: min(16rem, calc(100vw - 6.5rem));
+    min-width: 0;
+  }
+  .tsl__row {
+    margin-inline: calc(-1 * var(--gutter-x));
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tsl__lane { display: flex; width: max-content; padding-left: var(--gutter-x); }
+  .tsl__set { display: flex; gap: var(--gap); margin: 0; padding: 0.5rem var(--gap) 1.5rem 0; list-style: none; }
+  .tsl__item { flex: 0 0 var(--card-w); display: flex; }
+  /* Endless mode: no scrollbar (it would have no meaningful start or end). */
+  .tsl__row.is-looping { scrollbar-width: none; }
+  .tsl__row.is-looping::-webkit-scrollbar { display: none; }
+  @media (hover: hover) and (pointer: fine) {
+    .tsl__row.is-looping { cursor: grab; }
+    .tsl__row.is-dragging { cursor: grabbing; user-select: none; }
+    .tsl__row.is-dragging a { pointer-events: none; }
+  }
+
+  /* ---------- Card ---------- */
+  .tcard {
+    position: relative; display: flex; flex-direction: column; width: 100%;
+    background: #fff; color: var(--c-text); border-radius: var(--radius-md); overflow: hidden;
+    box-shadow: 0 20px 36px -20px rgb(3 18 35 / 0.6);
+  }
+  .tcard :focus-visible { outline-color: var(--c-primary); }
+  .tcard__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.1rem 0; }
+  .tcard :global(.tcard__photo) { --tphoto-size: 4.25rem; --tphoto-radius: 0.95rem; }
+  .tcard :global(.tcard__mark) { color: var(--c-primary-tint); margin-top: 0.15rem; }
+  .tcard__title { padding: 0.9rem 1.1rem 0; font-size: 1.0625rem; line-height: 1.35; }
+  .tcard__quote { padding: 0.45rem 1.1rem 0.9rem; }
+  .tcard__quote p {
+    font-size: 0.9375rem; line-height: 1.65; color: var(--c-muted);
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden;
+  }
+  .tcard__by {
+    margin-top: auto; display: grid; gap: 0.15rem;
+    padding: 0.8rem 1.1rem 0.35rem; border-top: 1px solid var(--c-line);
+  }
+  .tcard__who { display: grid; line-height: 1.35; min-width: 0; }
+  .tcard__who strong { color: var(--c-ink); font-size: 0.9375rem; }
+  .tcard__who span { font-size: 0.78rem; color: var(--c-muted); }
+  .tcard__more { display: inline-flex; align-items: center; justify-self: start; min-height: 2.75rem; font-size: 0.8125rem; font-weight: 650; text-decoration: none; }
+  .tcard__more:hover { text-decoration: underline; }
+
+  /* ---------- Breakpoints ---------- */
+  @media (min-width: 640px) {
+    .tsl { padding: 4rem 2rem 1.5rem; }
+    .tsl__medallion { left: 2rem; width: 5.25rem; height: 5.25rem; }
+    .tsl__medallion :global(svg) { width: 2rem; height: 2rem; }
+    .tsl__slider { --gutter-x: 2rem; --card-w: 17.5rem; }
+    /* The gutter is wider than the gap from here up: fade the left edge so the previous card reads as "more". */
+    .tsl__row.is-looping {
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--gutter-x));
+      mask-image: linear-gradient(90deg, transparent, #000 var(--gutter-x));
+    }
+  }
+  @media (min-width: 1024px) {
+    /* The row runs to the panel's right edge. */
+    .tsl { grid-template-columns: minmax(15rem, 0.8fr) 2fr; gap: 3rem; align-items: center; padding: 4.5rem 0 3rem 3.25rem; }
+    .tsl__medallion { left: 3.25rem; }
+    .tsl__slider { --gutter-x: 2.5rem; --card-w: 18.5rem; }
+    .tsl__row { margin-right: 0; }
+    .tcard__head { padding: 1.25rem 1.25rem 0; }
+    .tcard :global(.tcard__photo) { --tphoto-size: 4.5rem; --tphoto-radius: 1rem; }
+    .tcard__title, .tcard__quote, .tcard__by { padding-inline: 1.25rem; }
+  }
+</style>

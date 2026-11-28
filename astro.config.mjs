@@ -16,5 +16,4 @@ export default defineConfig({
       filter: (page) => !page.includes('/site-map') && !page.includes('/404'),
     }),
   ],
-  prefetch: { prefetchAll: false },
 });

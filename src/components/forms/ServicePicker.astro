@@ -1,0 +1,350 @@
+---
+/**
+ * "Type of service" picker: a select-only combobox (WAI-ARIA APG pattern) that enhances a native
+ * <select>. The <select> stays the source of truth (it is what the form submits and what
+ * `?service=` deep links set); the custom UI mirrors it. Without JS the native select is shown.
+ *  - Services are grouped by `serviceCategories` and tinted with each group's tone.
+ *  - Desktop: a popover under (or above, if there is no room) the trigger. Phones: a bottom sheet.
+ *  - Keyboard: ↓/↑/Enter/Space/Alt+↓ open; ↑/↓/Home/End/PageUp/PageDown move; Enter/Space/Tab
+ *    choose; Esc closes; typing jumps to a service by name.
+ * Driven by `services` (one service: pre-selected).
+ */
+import Icon from '../ui/Icon.astro';
+import { serviceCategories, services } from '../../content/services';
+
+interface Props { id: string; label: string; hint?: string }
+const { id, label, hint } = Astro.props;
+
+const single = services.length === 1;
+const groups = serviceCategories
+  .map((c) => ({ ...c, services: services.filter((s) => s.category === c.id) }))
+  .filter((g) => g.services.length > 0);
+const describedBy = [hint ? `${id}-hint` : '', `${id}-error`].filter(Boolean).join(' ');
+const placeholder = 'Select a service';
+const meta = `${services.length} home care ${services.length === 1 ? 'service' : 'services'}`;
+---
+<div class="field sp" data-field="service" data-service-picker data-placeholder={placeholder} data-meta={meta}>
+  <label class="sp__label" id={`${id}-label`} for={id}>{label}<span class="req" aria-hidden="true">*</span></label>
+
+  <select class="sp__native" id={id} name="service" required aria-describedby={describedBy} data-sp-native>
+    <option value="">{placeholder}…</option>
+    {groups.map((g) => (
+      <optgroup label={g.title}>
+        {g.services.map((s) => <option value={s.title} data-slug={s.slug} selected={single}>{s.title}</option>)}
+      </optgroup>
+    ))}
+  </select>
+
+  <div class="sp__box" data-sp-box hidden>
+    <div class="sp__trigger" role="combobox" id={`${id}-combo`} tabindex="0" aria-haspopup="listbox" aria-expanded="false"
+      aria-controls={`${id}-list`} aria-labelledby={`${id}-label`} aria-describedby={describedBy} aria-required="true" data-sp-trigger data-focus-target>
+      <span class="sp__badge" aria-hidden="true" data-sp-badge><Icon name="stethoscope" size={20} /></span>
+      <span class="sp__text">
+        <span class="sp__value" data-sp-value>{placeholder}</span>
+        <span class="sp__meta" aria-hidden="true" data-sp-meta>{meta}</span>
+      </span>
+      <span class="sp__chev" aria-hidden="true"><Icon name="chevron-down" size={20} /></span>
+    </div>
+
+    <div class="sp__backdrop" data-sp-backdrop></div>
+    <div class="sp__panel" data-sp-panel>
+      <div class="sp__sheet-head" aria-hidden="true">
+        <span class="sp__grip"></span>
+        <span class="sp__sheet-title">Choose a service</span>
+        <button type="button" class="sp__close" tabindex="-1" data-sp-close><Icon name="close" size={20} /><span class="sr-only">Close</span></button>
+      </div>
+      <div class="sp__list" role="listbox" id={`${id}-list`} aria-labelledby={`${id}-label`} tabindex="-1" data-sp-list>
+        {groups.map((g) => (
+          <div role="group" class={`sp__group tone-${g.tone}`} aria-labelledby={`${id}-g-${g.id}`}>
+            <div class="sp__group-label" id={`${id}-g-${g.id}`}><Icon name={g.icon} size={15} />{g.title}</div>
+            {g.services.map((s) => (
+              <div role="option" class="sp__opt" id={`${id}-opt-${s.slug}`} aria-selected="false"
+                data-value={s.title} data-group={g.title} data-tone={g.tone}>
+                <span class="sp__opt-icon" aria-hidden="true"><Icon name={s.icon} size={19} /></span>
+                <span class="sp__opt-title">{s.title}</span>
+                <span class="sp__opt-check" aria-hidden="true"><Icon name="check" size={17} /></span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {hint && <p class="hint" id={`${id}-hint`}>{hint}</p>}
+  <p class="error" id={`${id}-error`} data-error></p>
+</div>
+
+<style>
+  .field { display: grid; gap: 0.45rem; align-content: start; min-width: 0; }
+  .sp { position: relative; }
+  .sp__label { display: flex; align-items: baseline; gap: 0.4rem; font-weight: 620; font-size: 0.9375rem; color: var(--c-ink); line-height: 1.3; }
+  .req { color: var(--c-accent); font-weight: 700; }
+
+  /* Native fallback (no JS) */
+  .sp__native { display: block; width: 100%; min-height: 3.25rem; padding: 0.8rem 2.75rem 0.8rem 1rem; background: var(--c-field-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2355687a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 1rem center; border: 1.5px solid var(--c-field-line); border-radius: var(--radius-field); appearance: none; color: var(--c-ink); }
+  .sp__native:focus { outline: none; border-color: var(--c-primary); box-shadow: var(--ring); }
+  .sp__native[aria-invalid='true'] { border-color: var(--c-danger); }
+
+  /* Trigger */
+  .sp__box { position: relative; }
+  .sp__trigger {
+    display: flex; align-items: center; gap: 0.85rem; min-height: 4rem; padding: 0.6rem 0.9rem 0.6rem 0.65rem;
+    background: var(--c-field-bg); border: 1.5px solid var(--c-field-line); border-radius: var(--radius-field);
+    cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  }
+  .sp__trigger:hover { border-color: var(--c-field-line-hover); }
+  .sp__trigger:focus { outline: none; }
+  .sp__trigger:focus-visible, .sp[data-open] .sp__trigger { background: #fff; border-color: var(--c-primary); box-shadow: var(--ring); }
+  .sp__trigger[aria-invalid='true'] { border-color: var(--c-danger); background: #fffafa; }
+  .sp__trigger[aria-invalid='true']:focus-visible { box-shadow: var(--ring-danger); }
+  .sp__badge { flex: none; display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 0.65rem; background: var(--c-bg-soft); color: #7b8fa1; border: 1px dashed #c3d1dd; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .sp[data-has-value] .sp__badge { background: var(--tone-soft); color: var(--tone); border: 0; }
+  .sp__text { flex: 1; display: grid; min-width: 0; line-height: 1.3; }
+  .sp__value { font-size: 1rem; color: #5d6f80; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sp[data-has-value] .sp__value { color: var(--c-ink); font-weight: 620; }
+  .sp__meta { font-size: 0.8125rem; color: var(--c-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sp[data-has-value] .sp__meta { color: var(--tone-ink); font-weight: 550; }
+  .sp__chev { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; color: var(--c-muted); transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .sp__trigger:hover .sp__chev { background: var(--c-primary-soft); color: var(--c-primary); }
+  .sp[data-open] .sp__chev { transform: rotate(180deg); color: var(--c-primary); }
+
+  /* Panel (desktop popover) */
+  .sp__panel {
+    position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 0.5rem);
+    display: flex; flex-direction: column; background: #fff; border: 1px solid var(--c-line); border-radius: 1rem;
+    box-shadow: 0 24px 48px -16px rgb(16 42 67 / 0.28), 0 4px 12px rgb(16 42 67 / 0.08);
+    opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.985); transform-origin: top center;
+    transition: opacity 180ms var(--ease), transform 180ms var(--ease), visibility 0s linear 180ms;
+  }
+  .sp[data-placement='top'] .sp__panel { top: auto; bottom: calc(100% + 0.5rem); transform-origin: bottom center; transform: translateY(6px) scale(0.985); }
+  .sp[data-open] .sp__panel { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .sp__list { max-height: min(24rem, 60vh); overflow-y: auto; overscroll-behavior: contain; padding: 0.4rem; scroll-padding: 2.4rem 0 0.4rem; }
+  .sp__list:focus { outline: none; }
+  .sp__group + .sp__group { margin-top: 0.3rem; padding-top: 0.3rem; border-top: 1px solid var(--c-line); }
+  .sp__group-label { position: sticky; top: -0.4rem; z-index: 1; display: flex; align-items: center; gap: 0.45rem; padding: 0.55rem 0.7rem 0.35rem; background: #fff; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--tone-ink); }
+  .sp__group-label :global(svg) { color: var(--tone); }
+  .sp__opt {
+    position: relative; display: flex; align-items: center; gap: 0.75rem; min-height: 2.9rem; padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+    border-radius: 0.65rem; color: var(--c-ink); cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: background-color 120ms var(--ease);
+  }
+  .sp__opt-icon { flex: none; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 0.55rem; background: var(--tone-soft); color: var(--tone); transition: background-color 120ms var(--ease), color 120ms var(--ease); }
+  .sp__opt-title { flex: 1; min-width: 0; font-weight: 520; }
+  .sp__opt-check { flex: none; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; color: #fff; background: var(--tone); transform: scale(0.4); opacity: 0; transition: transform 160ms var(--ease), opacity 160ms var(--ease); }
+  .sp__opt.is-active { background: var(--c-bg-soft); box-shadow: inset 0 0 0 1.5px var(--tone); }
+  .sp__opt[aria-selected='true'] { background: var(--tone-soft); }
+  .sp__opt[aria-selected='true'] .sp__opt-title { font-weight: 650; color: var(--tone-ink); }
+  .sp__opt[aria-selected='true'] .sp__opt-icon { background: var(--tone); color: #fff; }
+  .sp__opt[aria-selected='true'] .sp__opt-check { transform: none; opacity: 1; }
+  @media (hover: hover) { .sp__opt:hover { background: var(--c-bg-soft); } .sp__opt[aria-selected='true']:hover { background: var(--tone-soft); } }
+
+  .sp__sheet-head, .sp__backdrop { display: none; }
+
+  /* Phones: bottom sheet */
+  @media (max-width: 639.98px) {
+    .sp__backdrop { display: block; position: fixed; inset: 0; z-index: 140; background: rgb(16 42 67 / 0.5); opacity: 0; visibility: hidden; transition: opacity 220ms var(--ease), visibility 0s linear 220ms; }
+    .sp[data-open] .sp__backdrop { opacity: 1; visibility: visible; transition-delay: 0s; }
+    .sp__panel, .sp[data-placement='top'] .sp__panel {
+      position: fixed; z-index: 150; left: 0; right: 0; top: auto; bottom: 0; max-height: 85dvh;
+      border-radius: 1.25rem 1.25rem 0 0; border: 0; padding-bottom: env(safe-area-inset-bottom);
+      transform: translateY(100%); transition: transform 260ms var(--ease), visibility 0s linear 260ms; opacity: 1;
+    }
+    .sp[data-open] .sp__panel { transform: none; }
+    .sp__sheet-head { display: grid; grid-template-columns: 2.75rem 1fr 2.75rem; align-items: center; padding: 0.6rem 0.6rem 0.4rem; border-bottom: 1px solid var(--c-line); position: relative; }
+    .sp__grip { position: absolute; top: 0.4rem; left: 50%; width: 2.5rem; height: 0.25rem; margin-left: -1.25rem; border-radius: 999px; background: #c9d5df; }
+    .sp__sheet-title { grid-column: 2; text-align: center; font-weight: 650; color: var(--c-ink); padding-top: 0.35rem; }
+    .sp__close { grid-column: 3; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border: 0; border-radius: 50%; background: var(--c-bg-soft); color: var(--c-ink); cursor: pointer; }
+    .sp__list { max-height: none; flex: 1; padding: 0.4rem 0.6rem 1rem; }
+    .sp__opt { min-height: 3.25rem; }
+  }
+
+  .hint { font-size: 0.8125rem; line-height: 1.5; color: var(--c-muted); }
+  .error { display: flex; gap: 0.4rem; align-items: flex-start; font-size: 0.875rem; font-weight: 550; line-height: 1.45; color: var(--c-danger); }
+  .error::before { content: ''; flex: none; width: 1rem; height: 1rem; margin-top: 0.12rem; background: currentColor; -webkit-mask: var(--icon-alert) center / contain no-repeat; mask: var(--icon-alert) center / contain no-repeat; }
+  .error:empty { display: none; }
+</style>
+
+<script>
+  const PHONE = '(max-width: 639.98px)';
+
+  document.querySelectorAll<HTMLElement>('[data-service-picker]').forEach(init);
+
+  function init(root: HTMLElement) {
+    const native = root.querySelector<HTMLSelectElement>('[data-sp-native]')!;
+    const box = root.querySelector<HTMLElement>('[data-sp-box]')!;
+    const trigger = root.querySelector<HTMLElement>('[data-sp-trigger]')!;
+    const list = root.querySelector<HTMLElement>('[data-sp-list]')!;
+    const panel = root.querySelector<HTMLElement>('[data-sp-panel]')!;
+    const valueEl = root.querySelector<HTMLElement>('[data-sp-value]')!;
+    const metaEl = root.querySelector<HTMLElement>('[data-sp-meta]')!;
+    const badge = root.querySelector<HTMLElement>('[data-sp-badge]')!;
+    const label = root.querySelector<HTMLLabelElement>('label')!;
+    const options = Array.from(root.querySelectorAll<HTMLElement>('[role="option"]'));
+    const placeholderIcon = badge.innerHTML;
+    let active = -1;
+    let typed = '';
+    let typedTimer = 0;
+
+    // Enhance: the native select stays in the form (hidden selects are still submitted).
+    native.hidden = true;
+    native.tabIndex = -1;
+    box.hidden = false;
+    label.htmlFor = '';
+    label.addEventListener('click', () => trigger.focus());
+
+    const isOpen = () => root.hasAttribute('data-open');
+    const selectedIndex = () => options.findIndex((o) => o.dataset.value === native.value);
+
+    function sync() {
+      const i = selectedIndex();
+      options.forEach((o, j) => o.setAttribute('aria-selected', String(j === i)));
+      if (i >= 0) {
+        const o = options[i];
+        valueEl.textContent = o.dataset.value ?? '';
+        metaEl.textContent = o.dataset.group ?? '';
+        badge.className = `sp__badge tone-${o.dataset.tone}`;
+        badge.innerHTML = o.querySelector('.sp__opt-icon')!.innerHTML;
+        root.className = root.className.replace(/\btone-\S+/g, '').trim() + ` tone-${o.dataset.tone}`;
+        root.setAttribute('data-has-value', '');
+      } else {
+        valueEl.textContent = root.dataset.placeholder ?? '';
+        metaEl.textContent = root.dataset.meta ?? '';
+        badge.className = 'sp__badge';
+        badge.innerHTML = placeholderIcon;
+        root.removeAttribute('data-has-value');
+      }
+      // Mirror the native control's error state onto the visible trigger.
+      if (native.getAttribute('aria-invalid') === 'true') trigger.setAttribute('aria-invalid', 'true');
+      else trigger.removeAttribute('aria-invalid');
+    }
+
+    function setActive(i: number, scroll = true) {
+      if (!options.length) return;
+      active = Math.max(0, Math.min(options.length - 1, i));
+      options.forEach((o, j) => o.classList.toggle('is-active', j === active));
+      trigger.setAttribute('aria-activedescendant', options[active].id);
+      if (scroll) keepInView(options[active]);
+    }
+
+    function keepInView(el: HTMLElement) {
+      const header = el.parentElement?.querySelector<HTMLElement>('.sp__group-label');
+      const offset = header ? header.offsetHeight : 0;
+      const top = el.offsetTop - list.offsetTop;
+      if (top - offset < list.scrollTop) list.scrollTop = Math.max(0, top - offset - 4);
+      else if (top + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = top + el.offsetHeight - list.clientHeight + 4;
+    }
+
+    function open(start?: number) {
+      if (isOpen()) return;
+      const phone = matchMedia(PHONE).matches;
+      if (!phone) {
+        // Open below when it fits; else above if that fits under the sticky header; else scroll the
+        // trigger up so the list fits below it (never hide the list behind the header).
+        const r = trigger.getBoundingClientRect();
+        const headerBottom = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
+        const need = Math.min(24 * 16, innerHeight * 0.6) + 16;
+        const below = innerHeight - r.bottom;
+        const above = r.top - Math.max(0, headerBottom);
+        if (below >= need) root.dataset.placement = 'bottom';
+        else if (above >= need) root.dataset.placement = 'top';
+        else {
+          root.dataset.placement = 'bottom';
+          window.scrollBy({ top: need - below, behavior: 'instant' as ScrollBehavior });
+        }
+      } else {
+        document.documentElement.style.overflow = 'hidden';
+      }
+      root.setAttribute('data-open', '');
+      trigger.setAttribute('aria-expanded', 'true');
+      const sel = selectedIndex();
+      list.scrollTop = 0;
+      setActive(start ?? (sel >= 0 ? sel : 0));
+    }
+
+    function close() {
+      if (!isOpen()) return;
+      root.removeAttribute('data-open');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.removeAttribute('aria-activedescendant');
+      options.forEach((o) => o.classList.remove('is-active'));
+      document.documentElement.style.overflow = '';
+    }
+
+    function choose(i: number) {
+      const o = options[i];
+      if (!o) return;
+      if (native.value !== o.dataset.value) {
+        native.value = o.dataset.value ?? '';
+        native.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      sync();
+    }
+
+    function typeahead(ch: string) {
+      clearTimeout(typedTimer);
+      typed += ch.toLowerCase();
+      typedTimer = window.setTimeout(() => (typed = ''), 600);
+      const norm = (s: string) => s.toLowerCase().replace(/['’]/g, '');
+      const from = isOpen() ? active : selectedIndex();
+      const order = [...options.slice(from + 1), ...options.slice(0, from + 1)];
+      // Repeating one letter cycles through the services that start with it.
+      const query = typed.split('').every((c) => c === typed[0]) ? typed[0] : typed;
+      const hit = order.find((o) => norm(o.dataset.value ?? '').startsWith(norm(query)));
+      return hit ? options.indexOf(hit) : -1;
+    }
+
+    trigger.addEventListener('click', () => (isOpen() ? close() : open()));
+    trigger.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (!isOpen()) {
+        if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'Enter' || k === ' ') { e.preventDefault(); open(); return; }
+        if (k === 'Home') { e.preventDefault(); open(0); return; }
+        if (k === 'End') { e.preventDefault(); open(options.length - 1); return; }
+        if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && k !== ' ') {
+          const i = typeahead(k);
+          if (i >= 0) { open(i); }
+        }
+        return;
+      }
+      switch (k) {
+        case 'ArrowDown': e.preventDefault(); setActive(active + 1); break;
+        case 'ArrowUp':
+          e.preventDefault();
+          if (e.altKey) { choose(active); close(); } else setActive(active - 1);
+          break;
+        case 'Home': e.preventDefault(); setActive(0); break;
+        case 'End': e.preventDefault(); setActive(options.length - 1); break;
+        case 'PageDown': e.preventDefault(); setActive(active + 10); break;
+        case 'PageUp': e.preventDefault(); setActive(active - 10); break;
+        case 'Enter': case ' ': e.preventDefault(); choose(active); close(); break;
+        case 'Escape': e.preventDefault(); close(); break;
+        case 'Tab': choose(active); close(); break;
+        default:
+          if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const i = typeahead(k);
+            if (i >= 0) setActive(i);
+          }
+      }
+    });
+
+    // Keep focus on the trigger while the pointer is in the panel (aria-activedescendant pattern).
+    panel.addEventListener('mousedown', (e) => e.preventDefault());
+    options.forEach((o, i) => {
+      o.addEventListener('pointermove', () => { if (active !== i) setActive(i, false); });
+      o.addEventListener('click', () => { choose(i); close(); trigger.focus({ preventScroll: true }); });
+    });
+    root.querySelector('[data-sp-close]')!.addEventListener('click', () => { close(); trigger.focus({ preventScroll: true }); });
+    root.querySelector('[data-sp-backdrop]')!.addEventListener('click', close);
+    document.addEventListener('pointerdown', (e) => { if (isOpen() && !root.contains(e.target as Node)) close(); });
+    trigger.addEventListener('blur', () => { if (!matchMedia(PHONE).matches) close(); });
+    matchMedia(PHONE).addEventListener('change', close);
+
+    // External changes: ?service= deep links, form reset, validation state.
+    native.addEventListener('change', sync);
+    native.form?.addEventListener('reset', () => setTimeout(sync));
+    new MutationObserver(sync).observe(native, { attributes: true, attributeFilter: ['aria-invalid'] });
+    sync();
+  }
+</script>

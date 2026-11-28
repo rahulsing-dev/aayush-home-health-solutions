@@ -1,0 +1,61 @@
+---
+/** "Not sure where to start?": common situations, each linking to the services that can help. */
+import Icon from '../ui/Icon.astro';
+import SectionHead from '../ui/SectionHead.astro';
+import { careSituations, getCategory, getService } from '../../content/services';
+import { contact, telHref, whatsappHref } from '../../config/site';
+import type { Service } from '../../lib/types';
+
+const situations = careSituations.map((c) => ({ ...c, items: c.services.map(getService).filter((s): s is Service => Boolean(s)) }));
+const phone = contact.phones[0];
+---
+<SectionHead center id="finder-h" eyebrow="Find the right care" title="Not sure where to start?" text="Start with what is happening at home and see which services can help. We will help you plan the rest." />
+<ul role="list" class="finder">
+  {situations.map((c, i) => (
+    <li class="sit reveal" style={`--reveal-delay:${(i % 3) * 80}ms`}>
+      <span class="sit__icon"><Icon name={c.icon} size={24} /></span>
+      <h3>{c.title}</h3>
+      <p class="sit__text">{c.text}</p>
+      <p class="sit__label">Services that can help</p>
+      <ul role="list" class="sit__chips">
+        {c.items.map((s) => (
+          <li><a class:list={['chip', `tone-${getCategory(s.category)?.tone ?? 'blue'}`]} href={`/services/${s.slug}`}><Icon name={s.icon} size={16} /> {s.title}</a></li>
+        ))}
+      </ul>
+    </li>
+  ))}
+</ul>
+<div class="talk reveal">
+  <span class="talk__icon"><Icon name="users" size={26} /></span>
+  <div class="talk__copy">
+    <h3>Still unsure? Talk it through with us.</h3>
+    <p>Tell us about your loved one and we will suggest the care that fits. {contact.availability}.</p>
+  </div>
+  <div class="btn-row">
+    <a class="btn btn--light" href={telHref(phone.tel)}><Icon name="phone" size={18} /> Call {phone.display}</a>
+    <a class="btn btn--ghost-light" href={whatsappHref('Hello Aayush Home Health, I need help choosing the right care for my family.')} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+  </div>
+</div>
+
+<style>
+  .finder { display: grid; gap: 1rem; }
+  .sit { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; padding: 1.5rem; background: #fff; border: 1px solid var(--c-line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+  .sit__icon { display: grid; place-items: center; width: 3rem; height: 3rem; border-radius: 50%; background: var(--c-primary-soft); color: var(--c-primary); }
+  .sit h3 { font-size: 1.1875rem; line-height: 1.3; margin-top: 0.2rem; }
+  .sit__text { color: var(--c-muted); }
+  .sit__label { margin-top: auto; padding-top: 0.6rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-muted); }
+  .sit__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.75rem; padding: 0.35rem 0.9rem 0.35rem 0.7rem; border-radius: 999px; background: var(--tone-soft); color: var(--tone-ink); font-weight: 650; text-decoration: none; line-height: 1.25; transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .chip:hover { background: var(--tone); color: #fff; }
+  .chip :global(svg) { flex: none; }
+
+  .talk { position: relative; overflow: hidden; display: grid; gap: 1.25rem; align-items: center; margin-top: 1.25rem; padding: clamp(1.5rem, 1rem + 2vw, 2.25rem); border-radius: var(--radius-lg); color: #d9e7f3; background: radial-gradient(24rem 16rem at 100% 0%, rgb(255 255 255 / 0.10), transparent 70%), linear-gradient(120deg, var(--c-navy), var(--c-navy-2)); }
+  .talk__icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: rgb(255 255 255 / 0.12); color: #fff; }
+  .talk__copy { display: grid; gap: 0.4rem; }
+  .talk h3 { color: #fff; }
+  @media (min-width: 640px) { .finder { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; } }
+  @media (min-width: 1000px) {
+    .finder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .talk { grid-template-columns: auto 1fr auto; gap: 1.5rem; }
+  }
+</style>

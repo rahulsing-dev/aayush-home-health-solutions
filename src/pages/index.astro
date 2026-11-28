@@ -2,18 +2,22 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/sections/Hero.astro';
 import TrustStrip from '../components/sections/TrustStrip.astro';
-import ServiceCards from '../components/sections/ServiceCards.astro';
+import ServiceHighlights from '../components/sections/ServiceHighlights.astro';
+import { services } from '../content/services';
 import FeatureBand from '../components/sections/FeatureBand.astro';
-import WhyGrid from '../components/sections/WhyGrid.astro';
+import FounderMessage from '../components/sections/FounderMessage.astro';
+import WhyHighlights from '../components/sections/WhyHighlights.astro';
 import Process from '../components/sections/Process.astro';
-import Testimonials from '../components/sections/Testimonials.astro';
+import TestimonialSlider from '../components/sections/TestimonialSlider.astro';
 import BlogCards from '../components/sections/BlogCards.astro';
 import CtaBand from '../components/sections/CtaBand.astro';
 import SectionHead from '../components/ui/SectionHead.astro';
-import Media from '../components/ui/Media.astro';
 import Icon from '../components/ui/Icon.astro';
-import { about, career } from '../content/pages';
-import { site } from '../config/site';
+import { career, applyMessage } from '../content/pages';
+import { showTestimonialsOnHome } from '../content/testimonials';
+import { site, whatsappHref } from '../config/site';
+
+const hiringRole = career.openings[0];
 ---
 <BaseLayout isHome title="Home Nursing Services in Bangalore | Aayush Home Health Solutions" description={site.description}>
   <Hero />
@@ -21,77 +25,125 @@ import { site } from '../config/site';
 
   <section class="section" aria-labelledby="services-h">
     <div class="container">
-      <SectionHead center id="services-h" eyebrow="Our service" title="Professional nursing care, at home" text="Trained, trustworthy nursing staff for elderly persons and patients who need dependable care in the comfort of their own homes." />
-      <ServiceCards />
+      {services.length > 1 ? (
+        <SectionHead center id="services-h" eyebrow="Our services" title="Care at home, for every need" text="From everyday help to skilled nursing and specialised care, our trained staff look after your loved ones in the comfort of home." />
+      ) : (
+        <SectionHead center id="services-h" eyebrow="Our service" title="Professional nursing care, at home" text="Trained, trustworthy nursing staff for elderly persons and patients who need dependable care in the comfort of their own homes." />
+      )}
+      <ServiceHighlights />
     </div>
   </section>
 
   <FeatureBand />
 
-  <section class="section" aria-labelledby="about-h">
-    <div class="container about">
-      <div class="about__media reveal"><Media image={about.founder.image} /></div>
-      <div class="about__copy reveal" style="--reveal-delay:100ms">
-        <p class="eyebrow">About us</p>
-        <h2 id="about-h">Home health care built on personal experience</h2>
-        <p class="lead">{about.story[0]}</p>
-        <p>{about.story[1]}</p>
-        <p class="about__sign"><strong>{about.founder.name}</strong><span>{about.founder.role}</span></p>
-        <a class="btn btn--outline" href="/about">Read our story</a>
+  <FounderMessage />
+
+  <WhyHighlights />
+
+  <Process />
+
+  {showTestimonialsOnHome && <TestimonialSlider />}
+
+  {hiringRole ? (
+    <section class="section hiring" aria-labelledby="career-h">
+      <div class="container">
+        <div class="hiring__card reveal">
+          <div class="hiring__copy">
+            <p class="hiring-pill hiring-pill--light"><span class="live-dot" aria-hidden="true"></span> We are hiring</p>
+            <h2 id="career-h">Join our team as a {hiringRole.title} in {hiringRole.location}</h2>
+            <p class="hiring__lead">Caring and compassionate? Start a meaningful career in home healthcare with best-in-class training, competitive remuneration and a professional service environment.</p>
+            <ul role="list" class="hiring__points">
+              {career.benefits.slice(0, 3).map((b) => <li><span class="hiring__tick"><Icon name="check" size={14} /></span> {b.title}</li>)}
+            </ul>
+            <div class="btn-row">
+              <a class="btn btn--light" href={`/career#role-${hiringRole.id}`}>See the role and apply <Icon name="arrow-right" size={18} /></a>
+              <a class="btn btn--ghost-light" href={whatsappHref(applyMessage(hiringRole.title))} target="_blank" rel="noopener noreferrer" data-contact="whatsapp"><Icon name="whatsapp" size={18} /> Apply on WhatsApp<span class="sr-only"> (opens WhatsApp)</span></a>
+            </div>
+          </div>
+          <div class="ticket-wrap">
+            <div class="ticket">
+              <div class="ticket__top">
+                <span class="ticket__icon"><Icon name="users" size={24} /></span>
+                <div>
+                  <p class="ticket__kicker">Open position</p>
+                  <p class="ticket__role">{hiringRole.title}</p>
+                  <p class="ticket__place"><Icon name="map-pin" size={15} /> {hiringRole.location}</p>
+                </div>
+              </div>
+              <dl class="ticket__reqs">
+                {hiringRole.requirements.filter((r) => r.label !== 'Location').map((r) => (
+                  <div><dt><Icon name={r.icon} size={18} /> {r.label}</dt><dd>{r.value}</dd></div>
+                ))}
+              </dl>
+              {hiringRole.studyWhileWorking && (
+                <p class="ticket__study"><Icon name="graduation-cap" size={20} /> {hiringRole.studyWhileWorking}</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section class="section section--soft" aria-labelledby="why-h">
-    <div class="container">
-      <SectionHead center id="why-h" eyebrow="Why Aayush" title="What families can count on" />
-      <WhyGrid />
-    </div>
-  </section>
-
-  <section class="section"><div class="container"><Process /></div></section>
-
-  {/*<section class="section section--soft" aria-labelledby="tst-h">
-    <div class="container">
-      <SectionHead center id="tst-h" eyebrow="Testimonials" title="Words from the families we support" />
-      <Testimonials />
-    </div>
-  </section>*/}
-
-  <section class="section career" aria-labelledby="career-h">
-    <div class="container career__inner">
-      <span class="career__icon"><Icon name="briefcase" size={28} /></span>
-      <div class="career__copy">
-        <h2 id="career-h">Join our team</h2>
-        <p class="lead">{career.intro}</p>
+    </section>
+  ) : (
+    <section class="section career" aria-labelledby="career-h">
+      <div class="container career__inner">
+        <span class="career__icon"><Icon name="briefcase" size={28} /></span>
+        <div class="career__copy">
+          <h2 id="career-h">Join our team</h2>
+          <p class="lead">{career.intro}</p>
+        </div>
+        <a class="btn btn--outline" href="/career">Careers at Aayush</a>
       </div>
-      <a class="btn btn--outline" href="/career#openings">Current Openings</a>
-    </div>
-  </section>
+    </section>
+  )}
 
   <section class="section section--soft" aria-labelledby="blog-h">
     <div class="container">
-      <SectionHead center id="blog-h" eyebrow="Blog" title="Latest from Aayush" />
-      <BlogCards limit={2} />
-      <p class="more"><a class="link-arrow" href="/blog">View all posts <Icon name="arrow-right" size={18} /></a></p>
+      <SectionHead center id="blog-h" eyebrow="From our blog" title="Practical guides for families" text="Plain-language advice on home nursing, elder care and recovery at home." />
+      <BlogCards limit={3} />
+      <p class="more"><a class="link-arrow" href="/blog">View all articles <Icon name="arrow-right" size={18} /></a></p>
     </div>
   </section>
 
-  <CtaBand title="Need care for someone you love?" text="Tell us what you need. We are reachable 24/7 by phone and email." />
+  <CtaBand title="Need care for someone you love?" text="Tell us what you need. We are reachable 24/7 by phone, WhatsApp and email." />
 </BaseLayout>
 
 <style>
-  .about { display: grid; gap: 2.25rem; align-items: center; }
-  .about__media { max-width: 26rem; }
-  .about__copy { display: grid; gap: 1rem; justify-items: start; }
-  .about__sign { display: grid; line-height: 1.35; padding-left: 1rem; border-left: 3px solid var(--c-accent); }
-  .about__sign strong { color: var(--c-ink); }
-  .about__sign span { color: var(--c-muted); font-size: 0.9375rem; }
-  @media (min-width: 900px) { .about { grid-template-columns: 0.8fr 1.2fr; gap: 4.5rem; } .about__media { max-width: none; } }
   .career { background: var(--c-bg-warm); padding-block: clamp(2.75rem, 2rem + 3vw, 4.5rem); }
   .career__inner { display: grid; gap: 1.5rem; align-items: center; justify-items: start; }
   .career__icon { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: 50%; background: #fff; color: var(--c-primary); box-shadow: var(--shadow-sm); }
   .career__copy { display: grid; gap: 0.6rem; max-width: 46rem; }
   @media (min-width: 960px) { .career__inner { grid-template-columns: auto 1fr auto; gap: 2rem; } }
+
+  .hiring { background: var(--c-bg-warm); }
+  .hiring__card { position: relative; overflow: hidden; display: grid; gap: 2.25rem; align-items: center; padding: clamp(1.5rem, 1rem + 3vw, 3.5rem); border-radius: calc(var(--radius-lg) + 0.25rem); color: #e3f4f2; background: radial-gradient(28rem 22rem at 100% 0%, rgb(255 255 255 / 0.10), transparent 70%), linear-gradient(135deg, #073c3c, #0a5e5d 55%, var(--c-secondary)); box-shadow: var(--shadow-lg); }
+  .hiring__card::before { content: ''; position: absolute; left: -7rem; bottom: -9rem; width: 20rem; height: 20rem; border-radius: 50%; border: 2.5rem solid rgb(255 255 255 / 0.05); pointer-events: none; }
+  .hiring__copy { position: relative; display: grid; gap: 1.1rem; justify-items: start; }
+  .hiring__copy h2 { color: #fff; max-width: 20ch; }
+  .hiring__lead { font-size: var(--fs-500); max-width: 36rem; }
+  .hiring__points { display: grid; gap: 0.55rem; font-weight: 600; color: #fff; }
+  .hiring__points li { display: flex; align-items: center; gap: 0.6rem; }
+  .hiring__tick { flex: none; display: grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #fff; color: var(--c-secondary); }
+  .hiring__copy .btn-row { margin-top: 0.4rem; }
+
+  .ticket-wrap { position: relative; }
+  .ticket { position: relative; display: grid; gap: 1.1rem; padding: clamp(1.1rem, 0.8rem + 1.5vw, 1.5rem); background: #fff; color: var(--c-text); border-radius: var(--radius-lg); box-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.45); }
+  .ticket__top { display: flex; align-items: center; gap: 0.9rem; padding-bottom: 1.1rem; border-bottom: 2px dashed var(--c-line); }
+  .ticket__icon { flex: none; display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: var(--radius-md); background: var(--c-primary-soft); color: var(--c-primary); }
+  .ticket__kicker { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-success); }
+  .ticket__role { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; color: var(--c-ink); line-height: 1.2; }
+  .ticket__place { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--c-muted); font-weight: 600; font-size: 0.9375rem; }
+  .ticket__reqs { display: grid; gap: 0.75rem; margin: 0; }
+  .ticket__reqs div { display: grid; gap: 0.1rem; }
+  .ticket__reqs dt { display: flex; align-items: center; gap: 0.45rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--c-muted); }
+  .ticket__reqs dt :global(svg) { color: var(--c-primary); }
+  .ticket__reqs dd { margin: 0; padding-left: 1.6rem; color: var(--c-ink); font-weight: 600; }
+  .ticket__study { display: flex; gap: 0.65rem; align-items: flex-start; padding: 0.9rem 1rem; border-radius: var(--radius-md); background: var(--c-secondary-soft); color: #0a5958; font-weight: 650; line-height: 1.45; }
+  .ticket__study :global(svg) { flex: none; margin-top: 0.05rem; }
+  @media (min-width: 960px) {
+    .hiring__card { grid-template-columns: 1.25fr 0.85fr; gap: 3.5rem; }
+    /* A tilted layer behind the job card suggests a stack, while the card's text stays upright and crisp. */
+    .ticket-wrap::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius-lg); background: rgb(255 255 255 / 0.16); transform: rotate(3.5deg); transition: transform 400ms var(--ease); }
+    .hiring__card:hover .ticket-wrap::before { transform: rotate(5deg); }
+  }
   .more { margin-top: 2rem; text-align: center; }
 </style>

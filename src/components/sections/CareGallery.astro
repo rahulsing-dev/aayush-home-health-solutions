@@ -1,0 +1,78 @@
+---
+/**
+ * "Moments of care": a bento grid of the team's photos, a silent clip and short quotes, driven by
+ * `about.gallery`. Each item's `size` sets its tile shape (4 columns on desktop, 2 on phones/tablets).
+ */
+import Media from '../ui/Media.astro';
+import VideoCard from '../ui/VideoCard.astro';
+import QuoteBlock from '../ui/QuoteBlock.astro';
+import { about } from '../../content/pages';
+import type { TileSize } from '../../lib/types';
+
+// Display width of each tile shape, for the responsive `sizes` attribute (container max 72rem = 1152px).
+const sizes: Record<TileSize, string> = {
+  feature: '(min-width: 1200px) 570px, (min-width: 900px) 48vw, 100vw',
+  wide: '(min-width: 1200px) 570px, (min-width: 900px) 48vw, 100vw',
+  tall: '(min-width: 1200px) 280px, (min-width: 900px) 24vw, 50vw',
+  small: '(min-width: 1200px) 280px, (min-width: 900px) 24vw, (min-width: 600px) 50vw, 100vw',
+  banner: '100vw',
+};
+---
+<ul role="list" class="gallery">
+  {about.gallery.map((item, i) => (
+    <li class:list={['tile', `tile--${item.size}`, `tile--${item.kind}`, 'reveal']} style={`--reveal-delay:${(i % 4) * 80}ms`}>
+      {item.kind === 'photo' && (
+        <figure>
+          <Media image={item.image} sizes={sizes[item.size]} />
+          <figcaption>{item.caption}</figcaption>
+        </figure>
+      )}
+      {item.kind === 'video' && (
+        <figure>
+          <VideoCard video={item.video} />
+          <figcaption>{item.caption}</figcaption>
+        </figure>
+      )}
+      {item.kind === 'quote' && <QuoteBlock quote={item.quote} />}
+    </li>
+  ))}
+</ul>
+
+<style>
+  /* Rows have a minimum height and grow only for quote text: photo tiles are absolutely filled so they never size a row. */
+  .gallery { --row: clamp(8.5rem, 26vw, 12rem); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(var(--row), auto); grid-auto-flow: dense; gap: clamp(0.6rem, 0.4rem + 1vw, 1.1rem); }
+  .tile { position: relative; min-width: 0; border-radius: var(--radius-lg); overflow: hidden; }
+  .tile--feature { grid-column: span 2; grid-row: span 2; }
+  .tile--wide, .tile--banner { grid-column: 1 / -1; }
+  .tile--tall { grid-row: span 2; }
+  /* Phones: a small quote runs full width; a small photo becomes a large square so nothing is cramped. */
+  .tile--small.tile--quote { grid-column: span 2; }
+  .tile--small.tile--photo { grid-column: span 2; grid-row: span 2; }
+
+  .tile figure { position: absolute; inset: 0; margin: 0; }
+  /* Fill the tile; each photo keeps its own focal point (ImageSlot.position). */
+  .tile :global(.media), .tile :global(.video) { height: 100%; aspect-ratio: auto !important; border-radius: 0; }
+  .tile :global(img) { transition: transform 900ms var(--ease); }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .tile--photo:hover :global(img) { transform: scale(1.045); }
+  }
+  .tile figcaption {
+    position: absolute; inset: auto 0 0 0; z-index: 1; padding: 2.75rem 1rem 0.9rem; pointer-events: none;
+    color: #fff; font-weight: 600; font-size: var(--fs-400); line-height: 1.3; text-wrap: balance;
+    background: linear-gradient(to top, rgb(9 26 42 / 0.85), rgb(9 26 42 / 0.5) 55%, transparent);
+  }
+
+  .tile--quote { display: grid; padding: clamp(1.1rem, 0.8rem + 1.2vw, 1.75rem); background: linear-gradient(150deg, var(--c-bg-warm), #fff 75%); border: 1px solid #efe6da; }
+  .tile--quote.tile--banner { padding-block: clamp(1.75rem, 1.2rem + 2vw, 2.5rem); background: radial-gradient(40rem 14rem at 0% 0%, var(--c-secondary-soft), transparent 70%), linear-gradient(120deg, var(--c-primary-soft), #fff 60%, var(--c-bg-warm)); border-color: var(--c-line); }
+  .tile--banner :global(.quote) { max-width: 52rem; margin-inline: auto; }
+
+  @media (min-width: 600px) {
+    .tile--small.tile--quote, .tile--small.tile--photo { grid-column: span 1; grid-row: span 2; }
+  }
+  @media (min-width: 900px) {
+    .gallery { --row: 13.5rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .tile--wide { grid-column: span 2; }
+    .tile--small.tile--quote, .tile--small.tile--photo { grid-row: span 1; }
+    .tile--banner :global(.quote) { text-align: center; justify-items: center; }
+  }
+</style>

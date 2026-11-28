@@ -12,6 +12,11 @@
   --c-secondary-soft: #e3f3f2;
   --c-accent: #c8372d;         /* warm red from the logo; use sparingly */
   --c-accent-soft: #fceceb;
+  --c-plum: #6a3d9a;           /* service-group accents (see .tone-* in global.css) */
+  --c-plum-soft: #f1ebf8;
+  --c-sun: #a14f0a;
+  --c-sun-soft: #fdf0e1;
+  --c-whatsapp: #0f7a5a;      /* deep WhatsApp green: white text passes WCAG AA (5.3:1) */
 
   /* Neutrals */
   --c-navy: #102a43;
@@ -29,8 +34,8 @@
   --c-success-soft: #e6f4ec;
   --c-danger: #b42318;
   --c-danger-soft: #fdeceb;
-  --c-draft: #8a5a00;
-  --c-draft-soft: #fff4d6;
+  --c-notice: #8a5a00;
+  --c-notice-soft: #fff4d6;
 
   /* Typography */
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
@@ -59,6 +64,15 @@
   --shadow-sm: 0 1px 2px rgb(16 42 67 / 0.06), 0 1px 3px rgb(16 42 67 / 0.08);
   --shadow-md: 0 4px 12px rgb(16 42 67 / 0.08), 0 2px 4px rgb(16 42 67 / 0.05);
   --shadow-lg: 0 18px 40px -12px rgb(16 42 67 / 0.22);
+
+  /* Forms */
+  --c-field-bg: #fbfdff;
+  --c-field-line: #c3d1dd;
+  --c-field-line-hover: #8aa2b5;
+  --radius-field: 0.75rem;
+  --ring: 0 0 0 4px rgb(11 95 165 / 0.16);
+  --ring-danger: 0 0 0 4px rgb(180 35 24 / 0.16);
+  --icon-alert: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 7v6M12 17h.01'/%3E%3C/svg%3E");
 
   /* Motion */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
